@@ -29,7 +29,7 @@ export class BackendConnectionImpl {
         return false;
     }
 
-    send(message: string) {
+    send(message: any) {
         try {
             if (message) {
                 console.log("send message to external application: " + JSON.stringify(message));
