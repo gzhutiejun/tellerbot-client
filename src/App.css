@@ -1,0 +1,90 @@
+* {
+    background-color: transparent;
+    box-sizing: border-box;
+    border: none;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+
+html {
+    font-size: calc(100vh / 768);
+
+    &.resize {
+        @media (height < 768px) {
+            font-size: calc(600 / 768 * 1px);
+        }
+
+        @media (height >=768px) and (height < 960px) {
+            font-size: 1px;
+        }
+
+        @media (height >=960px) and (height < 1050px) {
+            font-size: calc(960 / 768 * 1px);
+        }
+
+        @media (height >=1050px) {
+            font-size: calc(1050 / 768 * 1px);
+        }
+    }
+}
+
+.acc-root {
+    font-family: "Open Sans";
+
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.acc-header {
+    display: flex;
+    align-items: center;
+    height: 60rem;
+    width: 100%;
+}
+
+.acc-logo {
+    background-image: url("./assets/images/logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    height: 60rem;
+    margin: 0 10rem;
+    width: 100%;
+}
+
+.acc-screen {
+    background-image: url("./assets/images/background.jpg");
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+
+    height: 100%;
+    width: 100%;
+}
+
+.acc-body {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    height: 708rem;
+    justify-content: center;
+    padding: 0 10rem 10rem 10rem;
+    width: 100%;
+}
+
+.avatar {
+    width: 40%;
+    height: 100%;
+    flex: auto;
+    right: 0;
+}
+
+.dialog {
+    width: 60%;
+    flex: auto;
+    right: 0;
+    margin: 10rem;
+}
