@@ -31,8 +31,9 @@ export class AtmConnectionImpl {
     send(message: any) {
         try {
             if (message) {
-                console.log("send message to external application: " + JSON.stringify(message));
-                this.connection.send(message);
+                const msg = JSON.stringify(message);
+                console.log("send message to external application: " + msg);
+                this.connection.send(msg);
             }
         } catch (e) {
             console.log(e + " ");

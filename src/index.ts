@@ -1,17 +1,16 @@
 import { myATMConnection } from "./services/atm-connection";
-import { myBackendConnection } from "./services/backend-connection";
 import { ConnectionOptions } from "./services/websocket";
 
 async function main() {
 
 
     //Establish Backend connection
-    const backendConnectionOption: ConnectionOptions = {
-        wsUrl: "ws://backend.com",
-        webApiUrl: ""
-    };
-    myBackendConnection.init(backendConnectionOption);
-    myBackendConnection.connect();
+    // const backendConnectionOption: ConnectionOptions = {
+    //     wsUrl: "ws://backend.com",
+    //     webApiUrl: ""
+    // };
+    // myBackendConnection.init(backendConnectionOption);
+    // myBackendConnection.connect();
 
     //Establish ATM connection
     const atmConnectionOption: ConnectionOptions = {
