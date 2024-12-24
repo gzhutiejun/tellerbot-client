@@ -1,43 +1,22 @@
 
-import { ConnectionOptions, WebSocketConnectionImpl } from "./websocket";
-
-
+import { ConnectionOptions } from "./websocket";
+import { io, Socket } from "socket.io-client";
 
 export class BackendConnectionImpl {
-    private connection!: WebSocketConnectionImpl;
-    opt: ConnectionOptions | undefined;
 
-
+    private backendSocket?: Socket;
     init(opt: ConnectionOptions) {
-        this.opt = opt;
-    }
-    onMessage = (strMsg: string) => {
-        const message = JSON.parse(strMsg);
-
-        if (message) {
-           console.log("message received",message);
-        }
-    };
-    async connect() {
-        try {
-            this.connection = new WebSocketConnectionImpl({ ...this.opt!, onMessage: this.onMessage });
-            return true;
-        } catch (e) {
-            console.log("connect, url = " + this.opt?.wsUrl);
-            console.log(e + " ");
-        }
-        return false;
+        this.backendSocket = io(opt.wsUrl);
+        this.backendSocket.connect();
     }
 
-    send(message: any) {
-        try {
-            if (message) {
-                console.log("send message to external application: " + JSON.stringify(message));
-                this.connection.send(message);
-            }
-        } catch (e) {
-            console.log(e + " ");
-        }
+    register(messageType: string, handler: any) {
+        this.backendSocket?.on(messageType, handler);
+    }
+
+   
+    send(messageType: string, message: any) {
+        this.backendSocket?.emit(messageType, message);
     }
 }
 

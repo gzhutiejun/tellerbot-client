@@ -5,6 +5,7 @@ import { ConnectionOptions, WebSocketConnectionImpl } from "./websocket";
 
 export class AtmConnectionImpl {
     private connection!: WebSocketConnectionImpl;
+    private messageReceivedHandler?: any;
     opt: ConnectionOptions | undefined;
 
 
@@ -12,12 +13,11 @@ export class AtmConnectionImpl {
         this.opt = opt;
     }
     onMessage = (strMsg: string) => {
-        const message = JSON.parse(strMsg);
-        if (message) {
-           console.log("message received",message);
-        }
+        console.log("message received", strMsg);
+        this.messageReceivedHandler(strMsg);
     };
     async connect() {
+        console.log("connect ATM");
         try {
             this.connection = new WebSocketConnectionImpl({ ...this.opt!, onMessage: this.onMessage });
             return true;
@@ -28,12 +28,16 @@ export class AtmConnectionImpl {
         return false;
     }
 
+    register(handler: any) {
+        console.log("register message handler");
+        this.messageReceivedHandler = handler;
+    }
+
     send(message: any) {
         try {
             if (message) {
-                const msg = JSON.stringify(message);
-                console.log("send message to external application: " + msg);
-                this.connection.send(msg);
+                console.log("send message to external application: " + JSON.stringify(message));
+                this.connection.send(message);
             }
         } catch (e) {
             console.log(e + " ");
@@ -42,4 +46,4 @@ export class AtmConnectionImpl {
 }
 
 const myATMConnection: AtmConnectionImpl = new AtmConnectionImpl();
-export { myATMConnection  };
+export { myATMConnection };

@@ -1,20 +1,17 @@
-import './App.css'
+import { useState } from 'react'
+import { Password } from 'primereact/password';
+import { InputText } from 'primereact/inputtext';
+        
+
 
 function App() {
+  const [value, setValue] = useState('');
   return (
 
-    <div className="acc-screen">
-      <div className="acc-header">
-        <div className="acc-logo"></div>
-      </div>
-      <div className="acc-body">
-        <div className="avatar">
-          <img src="../src/assets/images/ai-teller.jpg" />
-        </div>
-        <div className="dialog">
-        </div>
-      </div>
-
+    <div>
+        
+        <InputText value={value} onChange={(e) => setValue(e.target.value)} />
+        <Password value={value} onChange={(e) => setValue(e.target.value)} feedback={false} tabIndex={1} />
     </div>
   )
 }
