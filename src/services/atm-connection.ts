@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ConnectionOptions, WebSocketConnectionImpl } from "./websocket";
 
@@ -29,7 +30,7 @@ export class AtmConnectionImpl {
     }
 
     register(handler: any) {
-        console.log("register message handler");
+        console.log("register ATM message handler");
         this.messageReceivedHandler = handler;
     }
 

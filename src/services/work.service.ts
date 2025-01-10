@@ -5,12 +5,14 @@ import { myBackendConnection } from "./backend-connection";
 import { ConnectionOptions } from "./websocket";
 
 export class WorkerService {
+    private mediaStream?: MediaStream;
     private mediaRecorder?: MediaRecorder;
-    private audioChunks: any[] = [];
+    private audioChunks: Blob[] = [];
+
     constructor() { }
 
-    async start() {
-        await this.createMediaRecorder();
+    async init() {
+
         // Establish Backend connection
         const backendConnectionOption: ConnectionOptions = {
             wsUrl: "wss://aiteller.aifin-tech.com:80",
@@ -27,8 +29,8 @@ export class WorkerService {
             wsUrl: "ws://localhost:19500/atm-server",
             webApiUrl: ""
         };
-        myATMConnection.init(atmConnectionOption);
-        myATMConnection.connect();
+        // myATMConnection.init(atmConnectionOption);
+        // myATMConnection.connect();
 
 
         myATMConnection.register(this.clientHandler);
@@ -37,9 +39,11 @@ export class WorkerService {
         const msg = {
             "event": "ai-teller-ready"
         }
-        setTimeout(() => {
-            myATMConnection.send(msg);
-        }, 1000);
+        // setTimeout(() => {
+        //     myATMConnection.send(msg);
+        // }, 1000);
+
+        this.enableAudio();
     }
 
     private noteMixHandler = (data: any) => {
@@ -87,25 +91,69 @@ export class WorkerService {
         myATMConnection.send(JSON.stringify(messageToSend));
     }
 
-    private listen() {
-        if (!this.mediaRecorder) {
-            console.log("mediaRecorder is not created")
+
+    startRecording() {
+        if (this.mediaRecorder) {
+            this.mediaRecorder.start();
+        } else {
+            console.log("mediaRecorder is not created");
+            return;
+        }
+        
+    }
+
+    stopRecording() {    
+        if (this.mediaRecorder) {
+            this.mediaRecorder.stop();
+        } else {
+            console.log("mediaRecorder is not created");
+            return;
+        }
+    }
+
+    disableAudio() {
+        this.mediaRecorder?.stop();
+        this.mediaStream?.getTracks().forEach(track => track.stop());
+        this.mediaStream = undefined;
+    }
+    private async enableAudio() {
+
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        if (this.mediaStream) {
+            this.mediaRecorder = new MediaRecorder(this.mediaStream);
+        }
+        else {
+            console.log("mediaStream is not created");
             return;
         }
 
-        this.audioChunks = [];
-        this.mediaRecorder?.start();
+        if (!this.mediaRecorder) {
+            console.log("mediaRecorder is not created");
+            return;
+        }
 
+        this.mediaRecorder.stop();
+
+        this.mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+      
+            // const audioBlob = new Blob(this.audioChunks);
+            // const reader = new FileReader();
+            // reader.readAsDataURL(audioBlob);
+            // reader.onloadend = () => {
+            //     const base64Audio = (reader!.result! as string).split(',')[1];
+            //     console.log(base64Audio);
+            // };
+
+        }
+
+        this.mediaRecorder.ondataavailable = (e) => {
+            this.audioChunks.push(e.data);
+        };
     }
-
-    // private stopListen() {
-    //     if (!this.mediaRecorder) {
-    //         console.log("mediaRecorder is not created")
-    //         return;
-    //     }
-    //     this.mediaRecorder?.stop();
-    // }
-
 
     private clientHandler = (message: string) => {
         console.log("message received from ATM", message);
@@ -115,7 +163,7 @@ export class WorkerService {
                 case "open-session":
                     // speak for start conversation.
 
-                    this.listen();
+                    this.startRecording();
                     break;
                 case "close-session":
                     break;
@@ -131,35 +179,7 @@ export class WorkerService {
             }
         }
     }
-
-    private async createMediaRecorder() {
-
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-        if (mediaStream) {
-            this.mediaRecorder = new MediaRecorder(mediaStream);
-        }
-        else {
-            console.log("mediaStream is not created");
-            return;
-        }
-
-        if (!this.mediaRecorder) {
-            console.log("mediaRecorder is not created");
-            return;
-        }
-
-        this.mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(this.audioChunks);
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = () => {
-                const base64Audio = (reader!.result! as string).split(',')[1];
-                myBackendConnection.send('process_audio', { audio: base64Audio });
-            };
-        }
-
-        this.mediaRecorder.ondataavailable = (e) => {
-            this.audioChunks.push(e.data);
-        };
-    }
 }
+
+const myWorkerService: WorkerService = new WorkerService();
+export { myWorkerService };

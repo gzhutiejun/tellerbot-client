@@ -1,19 +1,23 @@
-import { useState } from 'react'
-import { Password } from 'primereact/password';
-import { InputText } from 'primereact/inputtext';
-        
-
+import { Button } from "primereact/button";
+import { myWorkerService } from "./services/work.service";
 
 function App() {
-  const [value, setValue] = useState('');
+  const startRecording = () => {
+    myWorkerService.startRecording();
+  };
+  const stopRecording = () => {
+    myWorkerService.stopRecording();
+  };
+  const disableAudio = () => {
+    myWorkerService.disableAudio();
+  };
   return (
-
     <div>
-        
-        <InputText value={value} onChange={(e) => setValue(e.target.value)} />
-        <Password value={value} onChange={(e) => setValue(e.target.value)} feedback={false} tabIndex={1} />
+      <Button label="Start Recording" icon="pi pi-check" onClick={startRecording} />
+      <Button label="Stop Recording" icon="pi pi-check" onClick={stopRecording} />
+      <Button label="Disable Audio" icon="pi pi-check" onClick={disableAudio} />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
