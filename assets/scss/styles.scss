@@ -95,7 +95,80 @@ body {
 
 .dialog {
   width: 60%;
-  flex: auto;
+  height: 100%;
   right: 0;
   margin: 10rem;
+}
+
+// 聊天区域
+.chat-container {
+  flex: 1;
+  min-height: 0; // 重要：防止flex子元素溢出
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+
+    .message-item {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      border-radius: var(--border-radius);
+      max-width: 80%;
+
+      .message-header {
+        opacity: 0.8;
+      }
+
+      &.customer {
+        background-color: var(--primary-100);
+        margin-right: auto;
+      }
+
+      &.agent {
+        background-color: var(--surface-200);
+        margin-left: auto;
+      }
+    }
+  }
+
+  .message-input-wrapper {
+    border-top: 1px solid var(--surface-border);
+    background-color: var(--surface-card);
+    margin-top: auto;
+  }
+
+  .p-tabview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .p-tabview-panels {
+      flex: 1;
+      overflow: hidden;
+      padding: 0;
+
+      .p-tabview-panel {
+        height: 100%;
+      }
+    }
+  }
+}
+
+.mic-icon {
+  background-size: contain;
+  background-repeat: no-repeat;
+
+  height: 30rem;
+  width: 30rem;
+
+  &.mic-on {
+    background-image: url("../images/mic-on.svg");
+  }
+  &.mic-off {
+    background-image: url("../images/mic.svg");
+  }
 }

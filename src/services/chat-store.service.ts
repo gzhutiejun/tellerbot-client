@@ -1,13 +1,14 @@
 import { makeAutoObservable } from "mobx";
 
-interface IDialogMessage {
+interface IChatMessage {
 	id: string;
 	content: string;
 	sender: "agent" | "customer";
 }
 
-export class DataStoreService {
-   messages: IDialogMessage[] = [];
+export class ChatStoreService {
+   messages: IChatMessage[] = [];
+   mic: boolean = false;
 
    constructor() {
     makeAutoObservable(this);
@@ -18,7 +19,7 @@ export class DataStoreService {
 	 * @param sender Message sender (agent/customer)
 	 */
 	addMessage(content: string, sender: "agent" | "customer") {
-		const newMessage: IDialogMessage = {
+		const newMessage: IChatMessage = {
 			id: crypto.randomUUID(),
 			content,
 			sender,
@@ -28,8 +29,8 @@ export class DataStoreService {
 
 }
 
-const dataStoreService = new DataStoreService();
-export { dataStoreService };
+const chatStoreService = new ChatStoreService();
+export { chatStoreService };
 
-dataStoreService.addMessage("Hello, how can I help you?", "agent");
-dataStoreService.addMessage("I have a question about my order.", "customer");
+chatStoreService.addMessage("Hello, how can I help you?", "agent");
+chatStoreService.addMessage("I have a question about my order.", "customer");
