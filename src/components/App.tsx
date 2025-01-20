@@ -27,7 +27,7 @@ function App() {
 
         <div className="dialog">
           <Dialog></Dialog>
-    
+          <Mic></Mic>
         </div>
       </div>
     </div>

@@ -1,25 +1,26 @@
 import { chatStoreService } from "../services/chat-store.service";
-
 import { Card } from "primereact/card";
+import { ScrollPanel } from "primereact/ScrollPanel";
 
 export default function Dialog() {
   return (
-    <Card
-      className="chat-container relative"
-      pt={{ content: { className: "p-0" } }}
+    <ScrollPanel
+      style={{ width: "100%", height: "80%", marginBottom: "20rem" }}
     >
-      <div className="messages p-2">
-        {chatStoreService.messages.map((msg) => (
-          <div key={msg.id} className={`message-item ${msg.sender}`}>
-            <div className="message-header mb-1">
-              <div className="text-500">
-                {msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)}
+      <Card className="chat-container">
+        <div className="messages">
+          {chatStoreService.messages.map((msg) => (
+            <div key={msg.id} className={`message-item ${msg.sender}`}>
+              <div className="message-header">
+                {/* <div className="text-500"> */}
+                {/* {msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)} */}
+                {/* </div> */}
               </div>
+              <div className="message-content">{msg.content}</div>
             </div>
-            <span className="text-sm">{msg.content}</span>
-          </div>
-        ))}
-      </div>
-    </Card>
+          ))}
+        </div>
+      </Card>
+    </ScrollPanel>
   );
 }
