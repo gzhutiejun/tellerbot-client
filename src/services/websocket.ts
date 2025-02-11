@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface ConnectionOptions {
     wsUrl: string;
@@ -6,7 +7,7 @@ export interface ConnectionOptions {
     jsonRpc?: boolean;
   }
   
-  export interface ConnectionHandlerOption<T = any> {
+  export interface ConnectionHandlerOption<T = unknown> {
     onOpened?: () => void;
     onClosed?: () => void;
     onError?: (err: any) => void;

@@ -38,7 +38,7 @@ export class ChatStoreService {
 const chatStoreService = new ChatStoreService();
 export { chatStoreService };
 
-for (let i = 0; i < 50; i++) {
+for (let i = 0; i < 5; i++) {
   chatStoreService.addMessage("Hello, how can I help you?" + i.toString(), "agent");
   chatStoreService.addMessage("I have a question about my order." + i.toString(), "customer");
 }
