@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { myATMConnection } from "./atm-connection";
+import { myATMConnection } from "./atm-service-agent";
 
 export const noteMixAction = (data: any) => {
     console.log('note-mix', data);

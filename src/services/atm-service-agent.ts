@@ -4,7 +4,7 @@ import { ConnectionOptions, WebSocketConnectionImpl } from "./websocket";
 
 
 
-export class AtmConnectionImpl {
+export class AtmServiceAgent {
     private connection!: WebSocketConnectionImpl;
     private messageReceivedHandler?: any;
     opt: ConnectionOptions | undefined;
@@ -46,5 +46,5 @@ export class AtmConnectionImpl {
     }
 }
 
-const myATMConnection: AtmConnectionImpl = new AtmConnectionImpl();
-export { myATMConnection };
+const myATMServiceAgent: AtmServiceAgent = new AtmServiceAgent();
+export { myATMServiceAgent };

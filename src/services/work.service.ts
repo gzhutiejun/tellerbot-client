@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { myATMConnection } from "./atm-connection";
-import { myBackendConnection } from "./backend-connection";
+
+import { myATMServiceAgent } from "./atm-service-agent";
+import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { ConnectionOptions } from "./websocket";
 
 export class WorkerService {
@@ -23,28 +24,28 @@ export class WorkerService {
     // Establish Backend connection
     this.chatbotConnectionOption = {
       wsUrl: "",
-      webApiUrl: "http://192.168.2.11:8000",
+      webApiUrl: "http://127.0.0.1:8000",
     };
 
     if (this.chatbotConnectionOption.webApiUrl!.endsWith("/")) {
       this.chatbotConnectionOption.webApiUrl!.slice(0, -1);
     }
-    myBackendConnection.init(this.chatbotConnectionOption);
+    myChatbotServiceAgent.init(this.chatbotConnectionOption);
 
-    this.chatbotServerConnected = await myBackendConnection.connect();
+    this.chatbotServerConnected = await myChatbotServiceAgent.connect();
 
     if (!this.chatbotServerConnected) {
       console.log("Chatbot service is not connected.");
     }
 
     if (!this.debugMode) {
-      myATMConnection.init(this.atmConnectionOption);
-      this.atmConnected = await myATMConnection.connect();
+      myATMServiceAgent.init(this.atmConnectionOption);
+      this.atmConnected = await myATMServiceAgent.connect();
     }
 
     if (this.atmConnected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
-      myATMConnection.send({
+      myATMServiceAgent.send({
         event: "ai-teller-ready",
       });
     }
@@ -57,12 +58,17 @@ export class WorkerService {
 
   startRecording() {
     if (this.mediaRecorder) {
-      console.log("start recording...");
-      this.mediaRecorder.start();
+      console.log("start recording...", this.mediaRecorder.state);
+      this.mediaRecorder.start(300);
+      console.log("mediaRecorder status", this.mediaRecorder.state);
     } else {
       console.log("mediaRecorder is not created");
       return;
     }
+
+    setTimeout(() => {
+      this.mediaRecorder?.stop();
+    },2000);
   }
 
   stopRecording() {
@@ -86,6 +92,7 @@ export class WorkerService {
       audio: true,
     });
     if (this.mediaStream) {
+      console.log("mediaStream")
       this.mediaRecorder = new MediaRecorder(this.mediaStream);
     } else {
       console.log("mediaStream is not created");
@@ -97,20 +104,16 @@ export class WorkerService {
       return false;
     }
 
-    this.mediaRecorder.stop();
-
     this.mediaRecorder.onstop = () => {
-      //    const audioBlob1 = new Blob(this.audioChunks, { type: "audio/wav" });
-      //    console.log("audioBlob1", audioBlob1);
-
+      //    const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
       //   const audioUrl = URL.createObjectURL(audioBlob);
       //   const audio = new Audio(audioUrl);
       //   audio.play();
 
       const audioBlob = new Blob(this.audioChunks);
-      const audioData = new FormData();
-      audioData.append("audiaData", audioBlob);
-      myBackendConnection.send("upload-audio-file", audioData)
+      const formData = new FormData();
+      formData.append("file",audioBlob);
+      myChatbotServiceAgent.upload(formData)
       //   const fileReader = new FileReader();
       //   fileReader.readAsDataURL(audioBlob);
       //   fileReader.onloadend = () => {
