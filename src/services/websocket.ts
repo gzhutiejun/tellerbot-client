@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface ConnectionOptions {
-    wsUrl: string;
-    webApiUrl: string;
+    wsUrl?: string;
+    webApiUrl?: string;
     autoConnect?: boolean;
     jsonRpc?: boolean;
   }

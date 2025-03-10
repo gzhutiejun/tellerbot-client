@@ -13,7 +13,7 @@ export class BackendConnectionImpl {
     let connected = false;
     try {
       const res = await fetch(
-        `${this.opt?.webApiUrl}/api/status`
+        `${this.opt?.webApiUrl}`
       );
 
       if (!res.ok) {
@@ -29,17 +29,14 @@ export class BackendConnectionImpl {
       return connected;
     }
   }
-  register(messageType: string, handler: any) {
-    console.log("register message handler", messageType);
+
+  send(method: string, data: string | FormData) {
+    this.postRequest( `${this.opt?.webApiUrl}/${method}/`, data);
   }
 
-  send(message: string) {
-    this.postRequest("api/predict", message);
-  }
-
-  private async postRequest(method: string, message: string): Promise<any> {
+  private async postRequest(method: string, data: string | FormData): Promise<any> {
     const retVal: BusOpResponse = {
-      requestName: "",
+      method: method,
       errorCode: "timeout",
     };
 
@@ -50,7 +47,7 @@ export class BackendConnectionImpl {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: message,
+        body: data,
       };
       const res = await fetch(`${this.opt?.webApiUrl}/${method}`, req);
 

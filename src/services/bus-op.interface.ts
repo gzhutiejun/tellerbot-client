@@ -1,6 +1,6 @@
 
 export interface BusOpResponse {
-    requestName: string;
+    method: string;
     errorCode: string;
     responseMessage?: any;
   }
