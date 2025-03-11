@@ -44,10 +44,10 @@ export class ChatbotServiceAgent {
     try {
       const req = {
         method: "POST",
-        // headers: {
-        //   "Content-Type": "multipart/form-data",
-        //   Accept: "multipart/form-data",
-        // },
+        headers: {
+          // "Content-Type": "multipart/form-data",
+          Accept: "multipart/form-data",
+        },
         body: data,
       };
       const res = await fetch(`${this.opt?.webApiUrl}/upload`, req);

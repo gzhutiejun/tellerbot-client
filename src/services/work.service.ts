@@ -14,6 +14,16 @@ export class WorkerService {
   private atmConnected = false;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
+
+  private audioContext?: AudioContext;
+  private analyser?: AnalyserNode;
+
+  private bufferLength: number = 0;
+  private dataArray?: Float32Array;
+  private silenceTimer: number = 0;
+  private silenceStart?: number = undefined;
+  private silenceThreshold = -35; // 调整静音阈值为更合理的值
+  private silenceTimeout = 2000;
   constructor() {}
 
   async init() {
@@ -50,83 +60,111 @@ export class WorkerService {
       });
     }
 
-    const audioEnabled = await this.enableAudio();
-    if (audioEnabled) {
-        this.startRecording();
-    }
+    this.startRecording();
   }
 
-  startRecording() {
-    if (this.mediaRecorder) {
-      console.log("start recording...", this.mediaRecorder.state);
-      this.mediaRecorder.start(300);
-      console.log("mediaRecorder status", this.mediaRecorder.state);
-    } else {
-      console.log("mediaRecorder is not created");
-      return;
-    }
+  async startRecording() {
+    console.log("startRecording");
+    this.audioChunks = [];
 
-    setTimeout(() => {
-      this.mediaRecorder?.stop();
-    },2000);
-  }
-
-  stopRecording() {
-    if (this.mediaRecorder) {
-      this.mediaRecorder.stop();
-    } else {
-      console.log("mediaRecorder is not created");
-      return;
-    }
-  }
-
-  disableAudio() {
-    this.mediaRecorder?.stop();
-    this.mediaStream?.getTracks().forEach((track) => track.stop());
-    this.mediaStream = undefined;
-  }
-
-  private async enableAudio(): Promise<boolean> {
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: false,
       audio: true,
     });
+
     if (this.mediaStream) {
-      console.log("mediaStream")
+      console.log("mediaStream created");
+      //this.startDetectSilence(this.mediaStream);
       this.mediaRecorder = new MediaRecorder(this.mediaStream);
     } else {
       console.log("mediaStream is not created");
-      return false;
+      return;
     }
 
     if (!this.mediaRecorder) {
       console.log("mediaRecorder is not created");
-      return false;
+      return;
     }
 
+    this.audioContext = new AudioContext();
+    this.analyser = this.audioContext.createAnalyser();
+    this.analyser.fftSize = 2048; // 设置更大的FFT大小以提高精确度
+    const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+    source.connect(this.analyser);
+
+
+    this.mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        this.audioChunks.push(event.data);
+      }
+    };
+
     this.mediaRecorder.onstop = () => {
-      //    const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
-      //   const audioUrl = URL.createObjectURL(audioBlob);
-      //   const audio = new Audio(audioUrl);
-      //   audio.play();
+      console.log("audioChunk size:", this.audioChunks.length);
+      if (this.audioChunks.length > 0) {
+        //    const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
+        //   const audioUrl = URL.createObjectURL(audioBlob);
+        //   const audio = new Audio(audioUrl);
+        //   audio.play();
 
-      const audioBlob = new Blob(this.audioChunks);
-      const formData = new FormData();
-      formData.append("file",audioBlob);
-      myChatbotServiceAgent.upload(formData)
-      //   const fileReader = new FileReader();
-      //   fileReader.readAsDataURL(audioBlob);
-      //   fileReader.onloadend = () => {
-      //       const base64Audio = (fileReader!.result! as string).split(',')[1];
-      //       console.log("base64Audio", base64Audio);
-      //   };
+        const audioBlob = new Blob(this.audioChunks);
+        const formData = new FormData();
+        formData.append("file", audioBlob);
+        console.log("audio size", audioBlob.size);
+        myChatbotServiceAgent.upload(formData);
+      }
     };
 
-    this.mediaRecorder.ondataavailable = (e) => {
-      this.audioChunks.push(e.data);
-    };
+    // this.startSilenceDetection();
+    this.mediaRecorder.start(200); // 每100ms触发一次ondataavailable事件
+    this.startSilenceDetection();
+  }
+  stopRecording() {
+    console.log("stopRecording",this.mediaRecorder?.state);
 
-    return true;
+    if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
+      this.mediaRecorder.stop();
+      this.mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+    }
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = 0;
+    }
+  }
+
+  private startSilenceDetection() {
+    this.bufferLength = this.analyser!.frequencyBinCount;
+    this.dataArray = new Float32Array(this.bufferLength);
+    this.silenceStart = undefined;
+
+    this.checkSilence();
+  }
+
+  private checkSilence = ()=> {
+    console.log(this.mediaRecorder?.state);
+    if (!this.mediaRecorder || this.mediaRecorder.state !== "recording") return;
+
+    this.analyser!.getFloatTimeDomainData(this.dataArray!);
+    let maxVolume = -Infinity;
+    for (let i = 0; i < this.bufferLength; i++) {
+      maxVolume = Math.max(maxVolume, Math.abs(this.dataArray![i]));
+    }
+
+    const volume = 20 * Math.log10(maxVolume);
+    if (volume < this.silenceThreshold) {
+      if (!this.silenceStart) {
+        this.silenceStart = Date.now();
+      } else if (Date.now() - this.silenceStart >= this.silenceTimeout) {
+        this.stopRecording();
+
+        return;
+      }
+    } else {
+      this.silenceStart = undefined;
+    }
+
+    setTimeout(() => {
+      this.checkSilence();
+    },100);
   }
 
   private clientHandler = (message: string) => {

@@ -11,13 +11,14 @@
   },
   "dependencies": {
     "@types/node": "^22.10.7",
+    "audio-context": "^1.0.3",
+    "mobx": "^6.13.5",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primereact": "^10.8.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "socket.io-client": "^4.8.1",
-    "mobx": "^6.13.5"
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
