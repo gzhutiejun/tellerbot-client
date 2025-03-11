@@ -22,10 +22,15 @@ export class WorkerService {
   private dataArray?: Float32Array;
   private silenceTimer: number = 0;
   private silenceStart?: number = undefined;
-  private silenceThreshold = -35; // 调整静音阈值为更合理的值
+  private silenceThreshold = -35; 
   private silenceTimeout = 2000;
+
   constructor() {}
 
+  /**
+   * Init worker service, create connections with ATM and Chatbot Service
+   * Report ai-teller-ready event to inform ATM that session is ready
+   */
   async init() {
     this.atmConnectionOption = {
       webApiUrl: "http:127.0.0.1:15206",
@@ -63,6 +68,11 @@ export class WorkerService {
     this.startRecording();
   }
 
+  /**
+   * startRecording, it enable microphone and start recording
+   * when customer voice is recorded, upload the audio file to service for further processing.
+   * @returns 
+   */
   async startRecording() {
     console.log("startRecording");
     this.audioChunks = [];
@@ -73,7 +83,6 @@ export class WorkerService {
 
     if (this.mediaStream) {
       console.log("mediaStream created");
-      //this.startDetectSilence(this.mediaStream);
       this.mediaRecorder = new MediaRecorder(this.mediaStream);
     } else {
       console.log("mediaStream is not created");
@@ -87,17 +96,22 @@ export class WorkerService {
 
     this.audioContext = new AudioContext();
     this.analyser = this.audioContext.createAnalyser();
-    this.analyser.fftSize = 2048; // 设置更大的FFT大小以提高精确度
+    this.analyser.fftSize = 2048; 
     const source = this.audioContext.createMediaStreamSource(this.mediaStream);
     source.connect(this.analyser);
 
-
+    /**
+     * ondataavailable event handler, save customer audio data to a buffer.
+     */
     this.mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
         this.audioChunks.push(event.data);
       }
     };
 
+    /**
+     * onstop handler, collect customer audio data and upload to server
+     */
     this.mediaRecorder.onstop = () => {
       console.log("audioChunk size:", this.audioChunks.length);
       if (this.audioChunks.length > 0) {
@@ -114,10 +128,13 @@ export class WorkerService {
       }
     };
 
-    // this.startSilenceDetection();
-    this.mediaRecorder.start(200); // 每100ms触发一次ondataavailable事件
+    this.mediaRecorder.start(100); // interval for trigger ondataavailable event
     this.startSilenceDetection();
   }
+
+  /**
+   * stopRecording, when customer complete a sentence, stop recording.
+   */
   stopRecording() {
     console.log("stopRecording",this.mediaRecorder?.state);
 
