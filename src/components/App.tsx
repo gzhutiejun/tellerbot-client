@@ -1,19 +1,9 @@
-import { Button } from "primereact/button";
-import { myWorkerService } from "../services/work.service";
 import Avatar from "./Avatar";
 import Dialog from "./Dialog";
 import Mic from "./Mic";
 
 function App() {
-  const startRecording = () => {
-    myWorkerService.startRecording();
-  };
-  const stopRecording = () => {
-    myWorkerService.stopRecording();
-  };
-  const disableAudio = () => {
-    myWorkerService.disableAudio();
-  };
+
   return (
     <div className={"acc-screen"}>
       <div className="acc-header">

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { set } from "mobx";
 import { myATMServiceAgent } from "./atm-service-agent";
+import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { ConnectionOptions } from "./websocket";
 
@@ -56,8 +56,9 @@ export class WorkerService {
       console.log("Chatbot service is not connected.");
     }
 
+    myATMServiceAgent.init(this.atmConnectionOption);
+    myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
     if (!this.debugMode) {
-      myATMServiceAgent.init(this.atmConnectionOption);
       this.atmConnected = await myATMServiceAgent.connect();
     }
 
@@ -67,8 +68,6 @@ export class WorkerService {
         event: "ai-teller-ready",
       });
     }
-
-    this.startRecording();
   }
 
   /**
@@ -132,7 +131,11 @@ export class WorkerService {
         formData.append("file", audioBlob);
         const uploadResp = await myChatbotServiceAgent.upload(formData);
         console.log("upload Response:", uploadResp);
-        if (uploadResp && uploadResp.responseMessage && uploadResp.responseMessage.file_path) {
+        if (
+          uploadResp &&
+          uploadResp.responseMessage &&
+          uploadResp.responseMessage.file_path
+        ) {
           console.log("upload audio success");
           this.lastAudioPath = uploadResp.responseMessage.file_path;
           const data = {
@@ -144,6 +147,10 @@ export class WorkerService {
             JSON.stringify(data)
           );
           console.log("transcribe Response:", transcribeResp);
+          if (transcribeResp && transcribeResp.responseMessage && transcribeResp.responseMessage.transcript) {
+            console.log("transcribe success", transcribeResp.responseMessage.transcript);
+            chatStoreService.setCustomerMessage(transcribeResp.responseMessage.transcript)
+          }
         } else {
           console.log("upload file failed");
         }
@@ -192,7 +199,7 @@ export class WorkerService {
       if (!this.silenceStart) {
         this.silenceStart = Date.now();
       } else if (Date.now() - this.silenceStart >= this.silenceTimeout) {
-        window.clearTimeout(this.listenTimer)
+        window.clearTimeout(this.listenTimer);
         this.stopRecording();
 
         return;
@@ -206,17 +213,22 @@ export class WorkerService {
     }, 100);
   };
 
-  private clientHandler = (message: string) => {
+  private atmMessageHandler = (message: string) => {
     console.log("message received from ATM", message);
     const atmMessage = JSON.parse(message);
     if (atmMessage.action) {
       switch (atmMessage.action) {
         case "open-session":
           // speak for start conversation.
-
-          this.startRecording();
+          this.clearSessonData();
+          this.process();
           break;
         case "close-session":
+          this.clearSessonData();
+          this.stopRecording();
+          myATMServiceAgent.send({
+            event: "session-closed",
+          });
           break;
         default:
           break;
@@ -230,6 +242,12 @@ export class WorkerService {
       }
     }
   };
+
+  private clearSessonData() {}
+  private process() {
+    console.log("start listening...");
+     this.startRecording();
+  }
 }
 
 const myWorkerService: WorkerService = new WorkerService();

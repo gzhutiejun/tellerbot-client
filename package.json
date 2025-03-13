@@ -13,9 +13,10 @@
     "@types/node": "^22.10.7",
     "audio-context": "^1.0.3",
     "mobx": "^6.13.5",
+    "mobx-react-lite": "^4.1.0",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
-    "primereact": "^10.8.4",
+    "primereact": "^10.8.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "socket.io-client": "^4.8.1"
