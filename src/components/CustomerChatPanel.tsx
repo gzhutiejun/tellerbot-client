@@ -4,7 +4,7 @@ export default function CustomerChatPanel() {
   return (
     <Observer>
       {() => (
-        <div className="customer-chat">
+        <div className="chat-panel customer-chat">
           <label>{chatStoreService.customerMessage}</label>
         </div>
       )}

@@ -4,7 +4,7 @@ export default function AgentChatPanel() {
   return (
     <Observer>
       {() => (
-        <div className="agent-chat">
+        <div className="chat-panel agent-chat">
           <label>{chatStoreService.agentMessage}</label>
         </div>
       )}

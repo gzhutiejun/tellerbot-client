@@ -85,7 +85,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: baseline;
-  padding: 10rem 10rem 10rem 20rem;
+  padding: 10rem;
 }
 
 .chat-panel {
@@ -94,34 +94,22 @@ body {
   background-color: white;
   border: none;
   padding: 10px;
-  margin: 10px;
+  border-radius: 10rem;
 }
 
 .customer-chat {
-  width: 100%;
   height: 30%;
   background-color: white;
-  border: none;
-  padding: 10px;
-  margin: 10px;
 }
 
 .agent-chat {
-  width: 100%;
   height: 20%;
   background-color: white;
-  border: none;
-  padding: 10px;
-  margin: 10px;
 }
 
 .agent-chat-detail {
-  width: 100%;
   height: 40%;
   background-color: white;
-  border: none;
-  padding: 10px;
-  margin: 10px;
 }
 
 .agent-detail-table {
@@ -154,6 +142,8 @@ body {
   padding: 10rem;
   flex-direction: column;
   align-items: center;
+  gap: 20rem;
+  margin-left: 20rem;
 }
 
 .mic-icon {
@@ -164,10 +154,10 @@ body {
   width: 100rem;
 
   &.mic-on {
-    background-image: url("../images/mic-on.jpg");
+    background-image: url("../images/mic-on.svg");
   }
   &.mic-off {
-    background-image: url("../images/mic-off.jpg");
+    background-image: url("../images/mic-off.svg");
   }
 }
 

@@ -4,7 +4,7 @@ export default function AgentChatDetail() {
   return (
     <Observer>
       {() => (
-        <div className="agent-chat-detail agent-detail-table">
+        <div className="chat-panel agent-chat-detail agent-detail-table">
           <tbody>
             {chatStoreService.agentMessageDetail.map((message, index) => (
               <tr key={index}>
