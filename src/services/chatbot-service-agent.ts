@@ -31,8 +31,9 @@ export class ChatbotServiceAgent {
     }
   }
 
-  send(method: string, data: string | FormData) {
-    this.postRequest( method, data);
+  async send(method: string, data: string | FormData): Promise<any> {
+    const res = await this.postRequest( method, data);
+    return res;
   }
 
   async upload(data: FormData): Promise<any> {

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { set } from "mobx";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { ConnectionOptions } from "./websocket";
@@ -22,9 +23,11 @@ export class WorkerService {
   private dataArray?: Float32Array;
   private silenceTimer: number = 0;
   private silenceStart?: number = undefined;
-  private silenceThreshold = -35; 
+  private silenceThreshold = -35;
   private silenceTimeout = 2000;
-
+  private lastAudioPath = "";
+  private maxListenTime = 30000;
+  private listenTimer: number = 0;
   constructor() {}
 
   /**
@@ -71,7 +74,7 @@ export class WorkerService {
   /**
    * startRecording, it enable microphone and start recording
    * when customer voice is recorded, upload the audio file to service for further processing.
-   * @returns 
+   * @returns
    */
   async startRecording() {
     console.log("startRecording");
@@ -80,6 +83,10 @@ export class WorkerService {
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: true,
     });
+
+    this.listenTimer = window.setTimeout(() => {
+      this.stopRecording();
+    }, this.maxListenTime);
 
     if (this.mediaStream) {
       console.log("mediaStream created");
@@ -96,7 +103,7 @@ export class WorkerService {
 
     this.audioContext = new AudioContext();
     this.analyser = this.audioContext.createAnalyser();
-    this.analyser.fftSize = 2048; 
+    this.analyser.fftSize = 2048;
     const source = this.audioContext.createMediaStreamSource(this.mediaStream);
     source.connect(this.analyser);
 
@@ -112,7 +119,7 @@ export class WorkerService {
     /**
      * onstop handler, collect customer audio data and upload to server
      */
-    this.mediaRecorder.onstop = () => {
+    this.mediaRecorder.onstop = async () => {
       console.log("audioChunk size:", this.audioChunks.length);
       if (this.audioChunks.length > 0) {
         //    const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
@@ -123,12 +130,27 @@ export class WorkerService {
         const audioBlob = new Blob(this.audioChunks);
         const formData = new FormData();
         formData.append("file", audioBlob);
-        console.log("audio size", audioBlob.size);
-        myChatbotServiceAgent.upload(formData);
+        const uploadResp = await myChatbotServiceAgent.upload(formData);
+        console.log("upload Response:", uploadResp);
+        if (uploadResp && uploadResp.responseMessage && uploadResp.responseMessage.file_path) {
+          console.log("upload audio success");
+          this.lastAudioPath = uploadResp.responseMessage.file_path;
+          const data = {
+            action: "transcribe",
+            file_path: this.lastAudioPath,
+          };
+          const transcribeResp = await myChatbotServiceAgent.send(
+            "transcribe",
+            JSON.stringify(data)
+          );
+          console.log("transcribe Response:", transcribeResp);
+        } else {
+          console.log("upload file failed");
+        }
       }
     };
 
-    this.mediaRecorder.start(100); // interval for trigger ondataavailable event
+    this.mediaRecorder?.start(200); // interval for trigger ondataavailable event
     this.startSilenceDetection();
   }
 
@@ -136,7 +158,7 @@ export class WorkerService {
    * stopRecording, when customer complete a sentence, stop recording.
    */
   stopRecording() {
-    console.log("stopRecording",this.mediaRecorder?.state);
+    console.log("stopRecording", this.mediaRecorder?.state);
 
     if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
       this.mediaRecorder.stop();
@@ -156,8 +178,7 @@ export class WorkerService {
     this.checkSilence();
   }
 
-  private checkSilence = ()=> {
-    console.log(this.mediaRecorder?.state);
+  private checkSilence = () => {
     if (!this.mediaRecorder || this.mediaRecorder.state !== "recording") return;
 
     this.analyser!.getFloatTimeDomainData(this.dataArray!);
@@ -171,6 +192,7 @@ export class WorkerService {
       if (!this.silenceStart) {
         this.silenceStart = Date.now();
       } else if (Date.now() - this.silenceStart >= this.silenceTimeout) {
+        window.clearTimeout(this.listenTimer)
         this.stopRecording();
 
         return;
@@ -181,8 +203,8 @@ export class WorkerService {
 
     setTimeout(() => {
       this.checkSilence();
-    },100);
-  }
+    }, 100);
+  };
 
   private clientHandler = (message: string) => {
     console.log("message received from ATM", message);
