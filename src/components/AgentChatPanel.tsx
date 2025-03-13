@@ -1,12 +1,11 @@
 import { chatStoreService } from "../services/chat-store.service";
 import { Observer } from "mobx-react-lite";
-export default function Dialog() {
+export default function AgentChatPanel() {
   return (
     <Observer>
       {() => (
-        <div>
+        <div className="agent-chat">
           <label>{chatStoreService.agentMessage}</label>
-          <label>{chatStoreService.customerMessage}</label>
         </div>
       )}
     </Observer>

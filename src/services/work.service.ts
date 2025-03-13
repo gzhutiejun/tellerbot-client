@@ -246,7 +246,7 @@ export class WorkerService {
   private clearSessonData() {}
   private process() {
     console.log("start listening...");
-     this.startRecording();
+    //  this.startRecording();
   }
 }
 

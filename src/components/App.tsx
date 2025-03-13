@@ -1,26 +1,36 @@
 import Avatar from "./Avatar";
-import Dialog from "./Dialog";
+import CustomerChatPanel from "./CustomerChatPanel";
 import Mic from "./Mic";
+import { Observer } from "mobx-react-lite";
+import AgentChatDetail from "./AgentChatDetail";
+import AgentChatPanel from "./AgentChatPanel";
 
 function App() {
-
   return (
-    <div className={"acc-screen"}>
-      <div className="acc-header">
-        <div className="acc-logo"></div>
-      </div>
+    <Observer>
+      {() => (
+        <div>
+          <div className={"acc-screen"}>
+            <div className="acc-header">
+              <div className="acc-logo"></div>
+            </div>
 
-      <div className="acc-body">
-        <div className="avatar">
-          <Avatar></Avatar>
-        </div>
+            <div className="acc-body">
+              <div className="avatar">
+                <Avatar></Avatar>
+              </div>
 
-        <div className="dialog">
-          <Dialog></Dialog>
-          <Mic></Mic>
+              <div className="dialog">
+                <AgentChatPanel></AgentChatPanel>
+                <AgentChatDetail></AgentChatDetail>
+                <CustomerChatPanel></CustomerChatPanel>
+                <Mic></Mic>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </Observer>
   );
 }
 
