@@ -4,6 +4,7 @@
 import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
+import { myLoggerService } from "./logger.service";
 import { ConnectionOptions } from "./websocket";
 
 export class WorkerService {
@@ -28,6 +29,7 @@ export class WorkerService {
   private lastAudioPath = "";
   private maxListenTime = 30000;
   private listenTimer: number = 0;
+
   constructor() {}
 
   /**
@@ -53,7 +55,7 @@ export class WorkerService {
     this.chatbotServerConnected = await myChatbotServiceAgent.connect();
 
     if (!this.chatbotServerConnected) {
-      console.log("Chatbot service is not connected.");
+      myLoggerService.log("Chatbot service is not connected.");
     }
 
     myATMServiceAgent.init(this.atmConnectionOption);
@@ -76,27 +78,30 @@ export class WorkerService {
    * @returns
    */
   async startRecording() {
-    console.log("startRecording");
+    myLoggerService.log("startRecording");
     this.audioChunks = [];
 
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: true,
     });
 
+    chatStoreService.setStatus("Recording...");
+    chatStoreService.setMic(true);
+
     this.listenTimer = window.setTimeout(() => {
       this.stopRecording();
     }, this.maxListenTime);
 
     if (this.mediaStream) {
-      console.log("mediaStream created");
+      myLoggerService.log("mediaStream created");
       this.mediaRecorder = new MediaRecorder(this.mediaStream);
     } else {
-      console.log("mediaStream is not created");
+      myLoggerService.log("mediaStream is not created");
       return;
     }
 
     if (!this.mediaRecorder) {
-      console.log("mediaRecorder is not created");
+      myLoggerService.log("mediaRecorder is not created");
       return;
     }
 
@@ -109,7 +114,7 @@ export class WorkerService {
     /**
      * ondataavailable event handler, save customer audio data to a buffer.
      */
-    this.mediaRecorder.ondataavailable = (event) => {
+    this.mediaRecorder.ondataavailable = (event) => {  
       if (event.data.size > 0) {
         this.audioChunks.push(event.data);
       }
@@ -119,7 +124,7 @@ export class WorkerService {
      * onstop handler, collect customer audio data and upload to server
      */
     this.mediaRecorder.onstop = async () => {
-      console.log("audioChunk size:", this.audioChunks.length);
+      myLoggerService.log("audioChunk size:" + this.audioChunks.length);
       if (this.audioChunks.length > 0) {
         //    const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
         //   const audioUrl = URL.createObjectURL(audioBlob);
@@ -129,30 +134,47 @@ export class WorkerService {
         const audioBlob = new Blob(this.audioChunks);
         const formData = new FormData();
         formData.append("file", audioBlob);
-        const uploadResp = await myChatbotServiceAgent.upload(formData);
-        console.log("upload Response:", uploadResp);
+        const uploadResult = await myChatbotServiceAgent.upload(formData);
+        if (uploadResult) {
+          myLoggerService.log(
+            "upload Response:" + JSON.stringify(uploadResult)
+          );
+        }
+
         if (
-          uploadResp &&
-          uploadResp.responseMessage &&
-          uploadResp.responseMessage.file_path
+          uploadResult &&
+          uploadResult.responseMessage &&
+          uploadResult.responseMessage.file_path
         ) {
-          console.log("upload audio success");
-          this.lastAudioPath = uploadResp.responseMessage.file_path;
+          myLoggerService.log("upload audio success");
+          chatStoreService.setStatus("Thinking...");
+          this.lastAudioPath = uploadResult.responseMessage.file_path;
           const data = {
             action: "transcribe",
             file_path: this.lastAudioPath,
           };
-          const transcribeResp = await myChatbotServiceAgent.send(
+          const transcribeResult = await myChatbotServiceAgent.send(
             "transcribe",
             JSON.stringify(data)
           );
-          console.log("transcribe Response:", transcribeResp);
-          if (transcribeResp && transcribeResp.responseMessage && transcribeResp.responseMessage.transcript) {
-            console.log("transcribe success", transcribeResp.responseMessage.transcript);
-            chatStoreService.setCustomerMessage(transcribeResp.responseMessage.transcript)
+          chatStoreService.setStatus("");
+          
+          if (transcribeResult) {
+            myLoggerService.log(
+              "transcribe Response:" + JSON.stringify(transcribeResult)
+            );
+          }
+          if (
+            transcribeResult &&
+            transcribeResult.responseMessage &&
+            transcribeResult.responseMessage.transcript
+          ) {
+            chatStoreService.setCustomerMessage(
+              transcribeResult.responseMessage.transcript
+            );
           }
         } else {
-          console.log("upload file failed");
+          myLoggerService.log("upload file failed");
         }
       }
     };
@@ -165,8 +187,9 @@ export class WorkerService {
    * stopRecording, when customer complete a sentence, stop recording.
    */
   stopRecording() {
-    console.log("stopRecording", this.mediaRecorder?.state);
-
+    myLoggerService.log("stopRecording: " + this.mediaRecorder?.state);
+    chatStoreService.setStatus("");
+    chatStoreService.setMic(false);
     if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
       this.mediaRecorder.stop();
       this.mediaRecorder.stream.getTracks().forEach((track) => track.stop());
@@ -215,6 +238,7 @@ export class WorkerService {
 
   private atmMessageHandler = (message: string) => {
     console.log("message received from ATM", message);
+    myLoggerService.log("message received from ATM");
     const atmMessage = JSON.parse(message);
     if (atmMessage.action) {
       switch (atmMessage.action) {
@@ -245,8 +269,8 @@ export class WorkerService {
 
   private clearSessonData() {}
   private process() {
-    console.log("start listening...");
-    //  this.startRecording();
+    myLoggerService.log("start listening...");
+     this.startRecording();
   }
 }
 

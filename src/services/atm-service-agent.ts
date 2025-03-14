@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { myLoggerService } from "./logger.service";
 import { ConnectionOptions, WebSocketConnectionImpl } from "./websocket";
 
 export class AtmServiceAgent {
@@ -11,12 +12,12 @@ export class AtmServiceAgent {
     this.opt = opt;
   }
   onMessage = (strMsg: string) => {
-    console.log("message received", strMsg);
+    myLoggerService.log("message received", strMsg);
     this.messageReceivedHandler(strMsg);
   };
 
   async connect() {
-    console.log("connect ATM");
+    myLoggerService.log("connect ATM");
     try {
       this.connection = new WebSocketConnectionImpl({
         ...this.opt!,
@@ -24,14 +25,14 @@ export class AtmServiceAgent {
       });
       return true;
     } catch (e) {
-      console.log("connect, url = " + this.opt?.wsUrl);
-      console.log(e + " ");
+      myLoggerService.log("connect, url = " + this.opt?.wsUrl);
+      myLoggerService.log(e + " ");
     }
     return false;
   }
 
   registerMessageHandler(handler: any) {
-    console.log("register ATM message handler");
+    myLoggerService.log("register ATM message handler");
     this.messageReceivedHandler = handler;
 
     window.setTimeout(() => {
@@ -50,13 +51,13 @@ export class AtmServiceAgent {
   send(message: any) {
     try {
       if (message) {
-        console.log(
+        myLoggerService.log(
           "send message to external application: " + JSON.stringify(message)
         );
         this.connection.send(message);
       }
     } catch (e) {
-      console.log(e + " ");
+      myLoggerService.log(e + " ");
     }
   }
 }

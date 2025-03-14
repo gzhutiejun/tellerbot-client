@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { myATMConnection } from "./atm-service-agent";
+import { myLoggerService } from "./logger.service";
 
 export const noteMixAction = (data: any) => {
-    console.log('note-mix', data);
+    myLoggerService.log('note-mix', data);
 
     const formattedData = {
         action: data.action,  
@@ -31,7 +32,7 @@ export const  cashWithdrawalAction = (data: any) => {
 }
 
 export const closeSessionAction = (data: any) => {
-    console.log(data);
+    myLoggerService.log(data);
     const messageToSend = {
         action: "close-session",
         parameters: {

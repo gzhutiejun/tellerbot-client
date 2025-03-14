@@ -5,6 +5,7 @@ export class ChatStoreService {
   agentMessage: string = "";
   agentMessageDetail: string[] = [];
   mic: boolean = false;
+  status: string = "";
   constructor() {
     makeAutoObservable(this);
   }
@@ -17,8 +18,12 @@ export class ChatStoreService {
   addAgentMessageDetail(message: string) {
     this.agentMessageDetail.push(message + "\r\n");
   }
-
-
+  setMic(mic: boolean) {
+    this.mic = mic;
+  }
+  setStatus(status: string) {
+    this.status = status;
+  }
   clear() {
     this.customerMessage = "";
     this.agentMessage = "";
@@ -29,7 +34,7 @@ export class ChatStoreService {
 const chatStoreService = new ChatStoreService();
 export { chatStoreService };
 
-chatStoreService.setAgentMessage("Hello, how can I help you?");
-chatStoreService.addAgentMessageDetail("Currency: USD");
-chatStoreService.addAgentMessageDetail("Amount: 100");
-chatStoreService.setCustomerMessage("I have a question about my order.");
+// chatStoreService.setAgentMessage("Hello, how can I help you?");
+// chatStoreService.addAgentMessageDetail("Currency: USD");
+// chatStoreService.addAgentMessageDetail("Amount: 100");
+// chatStoreService.setCustomerMessage("I have a question about my order.");

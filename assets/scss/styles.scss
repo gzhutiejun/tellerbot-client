@@ -31,7 +31,7 @@ html {
 
 body {
   line-height: 1.5;
-  font-size: 10px;
+  font-size: 6px;
   margin: 0;
 }
 
@@ -110,6 +110,12 @@ body {
 .agent-chat-detail {
   height: 40%;
   background-color: white;
+}
+
+.chatbot-status {
+  height: 5%;
+  background-color: transparent;
+  color:chocolate
 }
 
 .agent-detail-table {

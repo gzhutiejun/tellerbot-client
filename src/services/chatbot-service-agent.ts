@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BusOpResponse } from "./bus-op.interface";
+import { myLoggerService } from "./logger.service";
 import { ConnectionOptions } from "./websocket";
 
 
@@ -18,15 +19,15 @@ export class ChatbotServiceAgent {
       );
 
       if (!res.ok) {
-        console.log("fail to connect chatbot server", res);
+        myLoggerService.log("fail to connect chatbot server:" + res.status);
         return connected;
       } else {
-        console.log("connected");
+        myLoggerService.log("connected");
         connected = true;
         return connected;
       }
     } catch (e: any) {
-      console.log("fail to connect chatbot server", e);
+      myLoggerService.log("fail to connect chatbot server" + e.message);
       return connected;
     }
   }
@@ -56,11 +57,11 @@ export class ChatbotServiceAgent {
       if (res.ok) {
         retVal.errorCode = "success";
         retVal.responseMessage = await res.json();
-        console.log(retVal);
+        myLoggerService.log(retVal);
       }
     } catch (e: any) {
       retVal.errorCode = "sendFailure";
-      console.log(e);
+      myLoggerService.log(e);
     }
 
     return retVal;
@@ -85,11 +86,11 @@ export class ChatbotServiceAgent {
       if (res.ok) {
         retVal.errorCode = "success";
         retVal.responseMessage = await res.json();
-        console.log(retVal);
+        myLoggerService.log(retVal);
       }
     } catch (e: any) {
       retVal.errorCode = "sendFailure";
-      console.log(e);
+      myLoggerService.log(e);
     }
 
     return retVal;

@@ -4,6 +4,7 @@ import Mic from "./Mic";
 import { Observer } from "mobx-react-lite";
 import AgentChatDetail from "./AgentChatDetail";
 import AgentChatPanel from "./AgentChatPanel";
+import ChatbotStatus from "./ChatbotStatus";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
                 <AgentChatPanel></AgentChatPanel>
                 <AgentChatDetail></AgentChatDetail>
                 <CustomerChatPanel></CustomerChatPanel>
+                <ChatbotStatus></ChatbotStatus>
                 <Mic></Mic>
               </div>
             </div>

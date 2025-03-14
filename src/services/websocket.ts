@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { myLoggerService } from "./logger.service";
+
 export interface ConnectionOptions {
     wsUrl?: string;
     webApiUrl?: string;
@@ -31,7 +33,7 @@ export interface ConnectionOptions {
           onClosed?.();
         });
         this.ws.addEventListener("error", (e) => {
-          console.error(e);
+          myLoggerService.log("error" );
           onError?.(e);
         });
         this.ws.addEventListener("open", () => {
@@ -47,7 +49,7 @@ export interface ConnectionOptions {
       if (this.connected) {
         this.ws.send(typeof message === "string" ? message : JSON.stringify(message));
       } else {
-        console.error(`the web socket is closed`);
+        myLoggerService.log(`the web socket is closed`);
       }
     }
   }
