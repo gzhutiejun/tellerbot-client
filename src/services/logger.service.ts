@@ -2,7 +2,7 @@
 export class LoggerService {
   constructor() {}
   log(message: any) {
-    console.log(message);
+    console.log(Date.now(), message);
   }
 }
 

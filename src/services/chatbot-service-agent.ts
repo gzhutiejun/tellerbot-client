@@ -4,7 +4,6 @@ import { BusOpResponse } from "./bus-op.interface";
 import { myLoggerService } from "./logger.service";
 import { ConnectionOptions } from "./websocket";
 
-
 export class ChatbotServiceAgent {
   opt: ConnectionOptions | undefined;
   init(opt: ConnectionOptions) {
@@ -14,9 +13,7 @@ export class ChatbotServiceAgent {
   async connect(): Promise<boolean> {
     let connected = false;
     try {
-      const res = await fetch(
-        `${this.opt?.webApiUrl}`
-      );
+      const res = await fetch(`${this.opt?.webApiUrl}`);
 
       if (!res.ok) {
         myLoggerService.log("fail to connect chatbot server:" + res.status);
@@ -33,10 +30,34 @@ export class ChatbotServiceAgent {
   }
 
   async send(method: string, data: string | FormData): Promise<any> {
-    const res = await this.postRequest( method, data);
+    const res = await this.postRequest(method, data);
     return res;
   }
 
+  async download(file_path: string): Promise<any> {
+    const retVal: BusOpResponse = {
+      method: "upload",
+      errorCode: "timeout",
+    };
+
+    try {
+      const res = await fetch(
+        `${this.opt?.webApiUrl}/download/20250314_144216.mp3`, 
+      );
+      console.log(res);
+      if (res.ok) {
+        retVal.errorCode = "success";
+        retVal.responseMessage = await res.json();
+        myLoggerService.log(retVal);
+      }
+
+    } catch (e: any) {
+      retVal.errorCode = "download failure";
+      myLoggerService.log(e);
+    }
+
+    return ;
+  }
   async upload(data: FormData): Promise<any> {
     const retVal: BusOpResponse = {
       method: "upload",
@@ -66,7 +87,10 @@ export class ChatbotServiceAgent {
 
     return retVal;
   }
-  private async postRequest(method: string, data: string | FormData): Promise<any> {
+  private async postRequest(
+    method: string,
+    data: string | FormData
+  ): Promise<any> {
     const retVal: BusOpResponse = {
       method: method,
       errorCode: "timeout",

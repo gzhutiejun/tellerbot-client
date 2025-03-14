@@ -60,6 +60,7 @@ export class WorkerService {
 
     myATMServiceAgent.init(this.atmConnectionOption);
     myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
+    chatStoreService.setDebugMode(this.debugMode);
     if (!this.debugMode) {
       this.atmConnected = await myATMServiceAgent.connect();
     }
@@ -149,8 +150,15 @@ export class WorkerService {
           myLoggerService.log("upload audio success");
           chatStoreService.setStatus("Thinking...");
           this.lastAudioPath = uploadResult.responseMessage.file_path;
+          myLoggerService.log("uploaded file:" + this.lastAudioPath);
+
+          const downloadResult = await myChatbotServiceAgent.download(
+            this.lastAudioPath
+          );
+
           const data = {
             action: "transcribe",
+            session_id: chatStoreService.sessionId,
             file_path: this.lastAudioPath,
           };
           const transcribeResult = await myChatbotServiceAgent.send(
@@ -158,7 +166,7 @@ export class WorkerService {
             JSON.stringify(data)
           );
           chatStoreService.setStatus("");
-          
+
           if (transcribeResult) {
             myLoggerService.log(
               "transcribe Response:" + JSON.stringify(transcribeResult)
@@ -244,12 +252,15 @@ export class WorkerService {
       switch (atmMessage.action) {
         case "open-session":
           // speak for start conversation.
-          this.clearSessonData();
-          this.process();
+          this.clearSessionData();
+          this.moveNext();
           break;
         case "close-session":
-          this.clearSessonData();
+          this.clearSessionData();
           this.stopRecording();
+          myChatbotServiceAgent.send("closesession", JSON.stringify({
+            session_id: chatStoreService.sessionId,
+          }));
           myATMServiceAgent.send({
             event: "session-closed",
           });
@@ -267,10 +278,14 @@ export class WorkerService {
     }
   };
 
-  private clearSessonData() {}
-  private process() {
+  private clearSessionData() {
+    chatStoreService.setSessionId("");
+  }
+  private moveNext() {
     myLoggerService.log("start listening...");
-     this.startRecording();
+    // this.startRecording();
+
+    // chatStoreService.setAudioUrl("http://127.0.0.1:8000/download/20250314_170154.mp3")
   }
 }
 

@@ -6,6 +6,7 @@ export default function AgentChatPanel() {
       {() => (
         <div className="chat-panel agent-chat">
           <label>{chatStoreService.agentMessage}</label>
+    
         </div>
       )}
     </Observer>

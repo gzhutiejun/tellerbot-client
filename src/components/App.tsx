@@ -5,7 +5,7 @@ import { Observer } from "mobx-react-lite";
 import AgentChatDetail from "./AgentChatDetail";
 import AgentChatPanel from "./AgentChatPanel";
 import ChatbotStatus from "./ChatbotStatus";
-
+import AudioPlayer from "./AudioPlayer";
 function App() {
   return (
     <Observer>
@@ -27,6 +27,7 @@ function App() {
                 <CustomerChatPanel></CustomerChatPanel>
                 <ChatbotStatus></ChatbotStatus>
                 <Mic></Mic>
+                <AudioPlayer></AudioPlayer>
               </div>
             </div>
           </div>

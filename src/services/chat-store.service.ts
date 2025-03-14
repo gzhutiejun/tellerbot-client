@@ -6,6 +6,9 @@ export class ChatStoreService {
   agentMessageDetail: string[] = [];
   mic: boolean = false;
   status: string = "";
+  debugMode: boolean = false;
+  audioUrl: string = "";
+  sessionId: string = "";
   constructor() {
     makeAutoObservable(this);
   }
@@ -18,11 +21,20 @@ export class ChatStoreService {
   addAgentMessageDetail(message: string) {
     this.agentMessageDetail.push(message + "\r\n");
   }
+  setAudioUrl(url: string) {
+    this.audioUrl = url;
+  }
   setMic(mic: boolean) {
     this.mic = mic;
   }
   setStatus(status: string) {
     this.status = status;
+  }
+  setSessionId(sessionId: string) {
+    this.sessionId = sessionId;
+  }
+  setDebugMode(debugMode: boolean) {
+    this.debugMode = debugMode;
   }
   clear() {
     this.customerMessage = "";
