@@ -86,7 +86,7 @@ export class WorkerService {
       audio: true,
     });
 
-    chatStoreService.setStatus("Recording...");
+    chatStoreService.setStatus("Listening...");
     chatStoreService.setMic(true);
 
     this.listenTimer = window.setTimeout(() => {
@@ -285,7 +285,8 @@ export class WorkerService {
     myLoggerService.log("start listening...");
     // this.startRecording();
 
-    // chatStoreService.setAudioUrl("http://127.0.0.1:8000/download/20250314_170154.mp3")
+    //  chatStoreService.setAudioUrl("http://127.0.0.1:8000/download/20250316_143408.mp3")
+
   }
 }
 

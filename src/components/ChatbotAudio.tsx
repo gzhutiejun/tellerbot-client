@@ -2,7 +2,7 @@ import { Observer } from "mobx-react-lite";
 import { chatStoreService } from "../services/chat-store.service";
 import { If } from "./if";
 
-export default function AudioPlayer() {
+export default function ChatbotAudio() {
   return (
     <Observer>
       {() => (
