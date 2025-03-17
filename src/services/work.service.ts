@@ -25,7 +25,7 @@ export class WorkerService {
   private silenceTimer: number = 0;
   private silenceStart?: number = undefined;
   private silenceThreshold = -35;
-  private silenceTimeout = 2000;
+  private silenceTimeout = 1000;
   private lastAudioPath = "";
   private maxListenTime = 20000;
   private listenTimer: number = 0;
@@ -60,13 +60,13 @@ export class WorkerService {
 
     myATMServiceAgent.init(this.atmConnectionOption);
     chatStoreService.setDebugMode(this.debugMode);
- 
+
     chatStoreService.registerAudioPlayCompleteHandler(this.startListening);
 
     await myATMServiceAgent.connect();
-    
+
     myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
-    
+
     if (this.atmConnected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
       myATMServiceAgent.send({
@@ -139,7 +139,7 @@ export class WorkerService {
         const formData = new FormData();
         formData.append("file", audioBlob);
         chatStoreService.setStatus("Thinking...");
-        myLoggerService.log("upload audio file")
+        myLoggerService.log("upload audio file");
         const uploadResult = await myChatbotServiceAgent.upload(formData);
 
         if (
@@ -152,25 +152,22 @@ export class WorkerService {
 
           const data = {
             action: "transcribe",
-            session_id: chatStoreService.sessionId,
+            session_id: chatStoreService.context.sessionId,
             file_path: this.lastAudioPath,
           };
 
-          myLoggerService.log("transcribe")
+          myLoggerService.log("transcribe");
           const transcribeResult = await myChatbotServiceAgent.send(
             "transcribe",
             JSON.stringify(data)
           );
           chatStoreService.setStatus("");
-          myLoggerService.log("transcribe complete")
+          myLoggerService.log("transcribe complete");
           if (
             transcribeResult &&
             transcribeResult.responseMessage &&
             transcribeResult.responseMessage.transcript
           ) {
-            chatStoreService.setCustomerMessage(
-              transcribeResult.responseMessage.transcript
-            );
             this.processTranscript(transcribeResult.responseMessage.transcript);
           }
         } else {
@@ -218,6 +215,7 @@ export class WorkerService {
     }
 
     const volume = 20 * Math.log10(maxVolume);
+    // console.log("volume, silenceThreshold, silenceStart", volume, this.silenceThreshold, this.silenceStart);
     if (volume < this.silenceThreshold) {
       if (!this.silenceStart) {
         this.silenceStart = Date.now();
@@ -251,7 +249,7 @@ export class WorkerService {
           myChatbotServiceAgent.send(
             "closesession",
             JSON.stringify({
-              session_id: chatStoreService.sessionId,
+              session_id: chatStoreService.context.sessionId,
             })
           );
           myATMServiceAgent.send({
@@ -291,14 +289,16 @@ export class WorkerService {
     ) {
       chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
 
-      const helloText = "Hello, I am NCR teller assistant, what services do you need?"
-      chatStoreService.setAgentMessage(helloText)
+      const helloMessage =
+        "Hello, I am NCR teller assistant, what services do you need?";
+      chatStoreService.clearAgentMessages();
+      chatStoreService.addAgentMessage(helloMessage);
       const ttsRes = await myChatbotServiceAgent.send(
         "generateaudio",
         JSON.stringify({
           action: "generateaudio",
-          sessionId: chatStoreService.sessionId,
-          text: helloText,
+          sessionId: chatStoreService.context.sessionId,
+          text: helloMessage,
         })
       );
 
@@ -317,10 +317,11 @@ export class WorkerService {
   private startListening = () => {
     myLoggerService.log("startListening");
     this.startRecording();
-  }
+  };
 
   private processTranscript(text: string) {
     myLoggerService.log(`processTranscript: ${text}`);
+    chatStoreService.setCustomerMessage(text);
   }
 }
 

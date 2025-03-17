@@ -24,7 +24,6 @@ function App() {
               </div>
 
               <div className="dialog">
-                <AgentChatPanel></AgentChatPanel>
                 <AgentChatDetail></AgentChatDetail>
                 <CustomerChatPanel></CustomerChatPanel>
                 <ChatbotStatus></ChatbotStatus>

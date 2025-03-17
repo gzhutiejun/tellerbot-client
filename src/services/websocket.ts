@@ -27,6 +27,10 @@ export interface ConnectionOptions {
     connect() {
       if (!this.connected) {
         const { wsUrl, onClosed, onError, onMessage, onOpened } = this.options;
+        if (!wsUrl) {
+          console.log("wsUrl is not configured");
+          return;
+        }
         this.ws = new WebSocket(wsUrl);
         this.ws.addEventListener("close", () => {
           this.connected = false;

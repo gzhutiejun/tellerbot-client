@@ -7,7 +7,7 @@ export default function AgentChatDetail() {
       {() => (
         <div className="chat-panel agent-chat-detail agent-detail-table">
           <table>
-            {chatStoreService.agentMessageDetail.map((message, index) => (
+            {chatStoreService.agentMessages.map((message, index) => (
               <tr key={index}>
                 <td>{message}</td>
               </tr>
