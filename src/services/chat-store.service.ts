@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { makeAutoObservable } from "mobx";
 
 export class ChatStoreService {
@@ -9,6 +10,9 @@ export class ChatStoreService {
   debugMode: boolean = false;
   audioUrl: string = "";
   sessionId: string = "";
+  conversationStarted: boolean = false;
+  startConversationHandler: any = null;
+  audioPlayCompleteHandler: any = null;
   constructor() {
     makeAutoObservable(this);
   }
@@ -35,6 +39,23 @@ export class ChatStoreService {
   }
   setDebugMode(debugMode: boolean) {
     this.debugMode = debugMode;
+  }
+  startConversation() {
+    if (this.startConversationHandler) {
+      this.conversationStarted = true;
+      this.startConversationHandler();
+    }
+  }
+  setAudioPlayComplete() {
+    if (this.audioPlayCompleteHandler) this.audioPlayCompleteHandler();
+  }
+
+  registerStartConversationHandler(handler: any) {
+    this.startConversationHandler = handler;
+  }
+
+  registerAudioPlayCompleteHandler(handler: any) {
+    this.audioPlayCompleteHandler = handler;
   }
   clear() {
     this.customerMessage = "";

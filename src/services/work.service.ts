@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { action } from "mobx";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
@@ -60,12 +59,14 @@ export class WorkerService {
     }
 
     myATMServiceAgent.init(this.atmConnectionOption);
-    myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
     chatStoreService.setDebugMode(this.debugMode);
-    if (!this.debugMode) {
-      this.atmConnected = await myATMServiceAgent.connect();
-    }
+ 
+    chatStoreService.registerAudioPlayCompleteHandler(this.startListening);
 
+    await myATMServiceAgent.connect();
+    
+    myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
+    
     if (this.atmConnected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
       myATMServiceAgent.send({
@@ -127,6 +128,7 @@ export class WorkerService {
      */
     this.mediaRecorder.onstop = async () => {
       myLoggerService.log("audioChunk size:" + this.audioChunks.length);
+
       if (this.audioChunks.length > 0) {
         //    const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
         //   const audioUrl = URL.createObjectURL(audioBlob);
@@ -136,20 +138,15 @@ export class WorkerService {
         const audioBlob = new Blob(this.audioChunks);
         const formData = new FormData();
         formData.append("file", audioBlob);
+        chatStoreService.setStatus("Thinking...");
+        myLoggerService.log("upload audio file")
         const uploadResult = await myChatbotServiceAgent.upload(formData);
-        if (uploadResult) {
-          myLoggerService.log(
-            "upload Response:" + JSON.stringify(uploadResult)
-          );
-        }
 
         if (
           uploadResult &&
           uploadResult.responseMessage &&
           uploadResult.responseMessage.file_path
         ) {
-          myLoggerService.log("upload audio success");
-          chatStoreService.setStatus("Thinking...");
           this.lastAudioPath = uploadResult.responseMessage.file_path;
           myLoggerService.log("uploaded file:" + this.lastAudioPath);
 
@@ -158,17 +155,14 @@ export class WorkerService {
             session_id: chatStoreService.sessionId,
             file_path: this.lastAudioPath,
           };
+
+          myLoggerService.log("transcribe")
           const transcribeResult = await myChatbotServiceAgent.send(
             "transcribe",
             JSON.stringify(data)
           );
           chatStoreService.setStatus("");
-
-          if (transcribeResult) {
-            myLoggerService.log(
-              "transcribe Response:" + JSON.stringify(transcribeResult)
-            );
-          }
+          myLoggerService.log("transcribe complete")
           if (
             transcribeResult &&
             transcribeResult.responseMessage &&
@@ -177,6 +171,7 @@ export class WorkerService {
             chatStoreService.setCustomerMessage(
               transcribeResult.responseMessage.transcript
             );
+            this.processTranscript(transcribeResult.responseMessage.transcript);
           }
         } else {
           myLoggerService.log("upload file failed");
@@ -296,12 +291,14 @@ export class WorkerService {
     ) {
       chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
 
+      const helloText = "Hello, I am NCR teller assistant, what services do you need?"
+      chatStoreService.setAgentMessage(helloText)
       const ttsRes = await myChatbotServiceAgent.send(
         "generateaudio",
         JSON.stringify({
           action: "generateaudio",
           sessionId: chatStoreService.sessionId,
-          text: "Hello, what services do you need?",
+          text: helloText,
         })
       );
 
@@ -317,11 +314,13 @@ export class WorkerService {
       }
     }
   }
-  private moveNext() {
-    myLoggerService.log("moveNext");
-    // this.startRecording();
+  private startListening = () => {
+    myLoggerService.log("startListening");
+    this.startRecording();
+  }
 
-    //  chatStoreService.setAudioUrl("http://127.0.0.1:8000/download/20250316_143441.mp3")
+  private processTranscript(text: string) {
+    myLoggerService.log(`processTranscript: ${text}`);
   }
 }
 

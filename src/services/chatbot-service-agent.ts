@@ -41,14 +41,15 @@ export class ChatbotServiceAgent {
     };
 
     try {
+      myLoggerService.log(`download: ${file_path}`)
       const res = await fetch(
         `${this.opt?.webApiUrl}/download/${file_path}`, 
       );
-      console.log(res);
+      myLoggerService.log(`download complete`)
       if (res.ok) {
         retVal.errorCode = "success";
         retVal.responseMessage = await res.json();
-        myLoggerService.log(retVal);
+        // myLoggerService.log(retVal);
       }
 
     } catch (e: any) {
@@ -63,7 +64,6 @@ export class ChatbotServiceAgent {
       method: "upload",
       errorCode: "timeout",
     };
-
     try {
       const req = {
         method: "POST",
@@ -74,11 +74,10 @@ export class ChatbotServiceAgent {
         body: data,
       };
       const res = await fetch(`${this.opt?.webApiUrl}/upload`, req);
-
       if (res.ok) {
         retVal.errorCode = "success";
         retVal.responseMessage = await res.json();
-        myLoggerService.log(retVal);
+        // myLoggerService.log(retVal);
       }
     } catch (e: any) {
       retVal.errorCode = "sendFailure";
@@ -106,11 +105,10 @@ export class ChatbotServiceAgent {
         body: data,
       };
       const res = await fetch(`${this.opt?.webApiUrl}/${method}`, req);
-      console.log(res);
       if (res.ok) {
         retVal.errorCode = "success";
         retVal.responseMessage = await res.json();
-        myLoggerService.log(retVal);
+        // myLoggerService.log(retVal);
       }
     } catch (e: any) {
       retVal.errorCode = "sendFailure";
