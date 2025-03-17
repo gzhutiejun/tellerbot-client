@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { action } from "mobx";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
@@ -27,7 +28,7 @@ export class WorkerService {
   private silenceThreshold = -35;
   private silenceTimeout = 2000;
   private lastAudioPath = "";
-  private maxListenTime = 30000;
+  private maxListenTime = 20000;
   private listenTimer: number = 0;
 
   constructor() {}
@@ -115,7 +116,7 @@ export class WorkerService {
     /**
      * ondataavailable event handler, save customer audio data to a buffer.
      */
-    this.mediaRecorder.ondataavailable = (event) => {  
+    this.mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
         this.audioChunks.push(event.data);
       }
@@ -151,10 +152,6 @@ export class WorkerService {
           chatStoreService.setStatus("Thinking...");
           this.lastAudioPath = uploadResult.responseMessage.file_path;
           myLoggerService.log("uploaded file:" + this.lastAudioPath);
-
-          const downloadResult = await myChatbotServiceAgent.download(
-            this.lastAudioPath
-          );
 
           const data = {
             action: "transcribe",
@@ -251,16 +248,17 @@ export class WorkerService {
     if (atmMessage.action) {
       switch (atmMessage.action) {
         case "open-session":
-          // speak for start conversation.
-          this.clearSessionData();
-          this.moveNext();
+          this.startSession();
           break;
         case "close-session":
           this.clearSessionData();
           this.stopRecording();
-          myChatbotServiceAgent.send("closesession", JSON.stringify({
-            session_id: chatStoreService.sessionId,
-          }));
+          myChatbotServiceAgent.send(
+            "closesession",
+            JSON.stringify({
+              session_id: chatStoreService.sessionId,
+            })
+          );
           myATMServiceAgent.send({
             event: "session-closed",
           });
@@ -281,12 +279,49 @@ export class WorkerService {
   private clearSessionData() {
     chatStoreService.setSessionId("");
   }
+
+  private async startSession() {
+    myLoggerService.log("startSession");
+    this.clearSessionData();
+    const sessionRes = await myChatbotServiceAgent.send(
+      "opensession",
+      JSON.stringify({
+        action: "opensession",
+      })
+    );
+    if (
+      sessionRes &&
+      sessionRes.responseMessage &&
+      sessionRes.responseMessage.session_id
+    ) {
+      chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
+
+      const ttsRes = await myChatbotServiceAgent.send(
+        "generateaudio",
+        JSON.stringify({
+          action: "generateaudio",
+          sessionId: chatStoreService.sessionId,
+          text: "Hello, what services do you need?",
+        })
+      );
+
+      if (
+        ttsRes &&
+        ttsRes.responseMessage &&
+        ttsRes.responseMessage.file_name
+      ) {
+        console.log("audio file name:", ttsRes.responseMessage.file_name);
+        chatStoreService.setAudioUrl(
+          "http://127.0.0.1:8000/download/" + ttsRes.responseMessage.file_name
+        );
+      }
+    }
+  }
   private moveNext() {
-    myLoggerService.log("start listening...");
+    myLoggerService.log("moveNext");
     // this.startRecording();
 
-    //  chatStoreService.setAudioUrl("http://127.0.0.1:8000/download/20250316_143408.mp3")
-
+    //  chatStoreService.setAudioUrl("http://127.0.0.1:8000/download/20250316_143441.mp3")
   }
 }
 

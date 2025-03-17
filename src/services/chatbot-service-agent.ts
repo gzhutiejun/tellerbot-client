@@ -42,7 +42,7 @@ export class ChatbotServiceAgent {
 
     try {
       const res = await fetch(
-        `${this.opt?.webApiUrl}/download/20250314_144216.mp3`, 
+        `${this.opt?.webApiUrl}/download/${file_path}`, 
       );
       console.log(res);
       if (res.ok) {
@@ -106,7 +106,7 @@ export class ChatbotServiceAgent {
         body: data,
       };
       const res = await fetch(`${this.opt?.webApiUrl}/${method}`, req);
-
+      console.log(res);
       if (res.ok) {
         retVal.errorCode = "success";
         retVal.responseMessage = await res.json();
