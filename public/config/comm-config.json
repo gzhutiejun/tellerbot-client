@@ -1,0 +1,6 @@
+{
+    "servers": {
+        "atmUrl": "http:127.0.0.1:15206",
+        "chatbotUrl": "http://127.0.0.1:8000"
+    }
+}

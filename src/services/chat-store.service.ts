@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { makeAutoObservable } from "mobx";
+import { ISessionContext } from "./model-interface";
 
 export class ChatStoreService {
   customerMessage: string = "";
@@ -11,7 +12,7 @@ export class ChatStoreService {
   conversationStarted: boolean = false;
   startConversationHandler: any = null;
   audioPlayCompleteHandler: any = null;
-  context = {
+  sessionContext: ISessionContext = {
     sessionId: "",
   }
   constructor() {
@@ -21,7 +22,7 @@ export class ChatStoreService {
     this.customerMessage = message;
   }
   addAgentMessage(message: string) {
-    this.agentMessages.push(message + "\r\n");
+    this.agentMessages.push(message);
   }
   clearAgentMessages() {
     this.agentMessages = [];
@@ -36,7 +37,7 @@ export class ChatStoreService {
     this.status = status;
   }
   setSessionId(sessionId: string) {
-    this.context.sessionId = sessionId;
+    this.sessionContext.sessionId = sessionId;
   }
   setDebugMode(debugMode: boolean) {
     this.debugMode = debugMode;
@@ -58,19 +59,21 @@ export class ChatStoreService {
   registerAudioPlayCompleteHandler(handler: any) {
     this.audioPlayCompleteHandler = handler;
   }
-  clear() {
+  resetSessionContext() {
     this.customerMessage = "";
     this.agentMessages = [];
-    this.context = {
-      sessionId: ""
+    this.sessionContext = {
+      sessionId: "",
+      transactionContext: {}
     }
+  }
+  resetTransactionContext() {
+    this.customerMessage = "";
+    this.agentMessages = [];
+    this.sessionContext.transactionContext = {}
   }
 }
 
 const chatStoreService = new ChatStoreService();
 export { chatStoreService };
 
-// chatStoreService.setAgentMessage("Hello, how can I help you?");
-// chatStoreService.addAgentMessageDetail("Currency: USD");
-// chatStoreService.addAgentMessageDetail("Amount: 100");
-// chatStoreService.setCustomerMessage("I have a question about my order.");

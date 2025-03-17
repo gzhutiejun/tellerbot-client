@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { myATMServiceAgent } from "./atm-service-agent";
+import { AtmServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
-import { myChatbotServiceAgent } from "./chatbot-service-agent";
+import { ChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
 import { ConnectionOptions } from "./websocket";
 
-export class WorkerService {
+export class ChatbotProcessor {
   private mediaStream?: MediaStream;
   private mediaRecorder?: MediaRecorder;
   private audioChunks: Blob[] = [];
@@ -16,7 +16,8 @@ export class WorkerService {
   private atmConnected = false;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
-
+  private myATMServiceAgent?: AtmServiceAgent ;
+  private myChatbotServiceAgent?: ChatbotServiceAgent;
   private audioContext?: AudioContext;
   private analyser?: AnalyserNode;
 
@@ -36,40 +37,43 @@ export class WorkerService {
    * Init worker service, create connections with ATM and Chatbot Service
    * Report ai-teller-ready event to inform ATM that session is ready
    */
-  async init() {
+  async init(atmUrl: string, chatbotUrl: string) {
+    console.log(atmUrl, chatbotUrl);
     this.atmConnectionOption = {
-      webApiUrl: "http:127.0.0.1:15206",
+      webApiUrl: atmUrl,
     };
 
     // Establish Backend connection
     this.chatbotConnectionOption = {
-      wsUrl: "",
-      webApiUrl: "http://127.0.0.1:8000",
+      webApiUrl: chatbotUrl,
     };
 
     if (this.chatbotConnectionOption.webApiUrl!.endsWith("/")) {
       this.chatbotConnectionOption.webApiUrl!.slice(0, -1);
     }
-    myChatbotServiceAgent.init(this.chatbotConnectionOption);
+    this.myChatbotServiceAgent = new ChatbotServiceAgent();
+    this.myChatbotServiceAgent.init(this.chatbotConnectionOption);
 
-    this.chatbotServerConnected = await myChatbotServiceAgent.connect();
+    this.chatbotServerConnected = await this.myChatbotServiceAgent.connect();
 
     if (!this.chatbotServerConnected) {
       myLoggerService.log("Chatbot service is not connected.");
     }
 
-    myATMServiceAgent.init(this.atmConnectionOption);
+    this.myATMServiceAgent = new AtmServiceAgent();
+    
+    this.myATMServiceAgent.init(this.atmConnectionOption);
     chatStoreService.setDebugMode(this.debugMode);
 
     chatStoreService.registerAudioPlayCompleteHandler(this.startListening);
 
-    await myATMServiceAgent.connect();
+    await this.myATMServiceAgent.connect();
 
-    myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
+    this.myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
 
     if (this.atmConnected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
-      myATMServiceAgent.send({
+      this.myATMServiceAgent.send({
         event: "ai-teller-ready",
       });
     }
@@ -140,7 +144,7 @@ export class WorkerService {
         formData.append("file", audioBlob);
         chatStoreService.setStatus("Thinking...");
         myLoggerService.log("upload audio file");
-        const uploadResult = await myChatbotServiceAgent.upload(formData);
+        const uploadResult = await this.myChatbotServiceAgent?.upload(formData);
 
         if (
           uploadResult &&
@@ -152,12 +156,12 @@ export class WorkerService {
 
           const data = {
             action: "transcribe",
-            session_id: chatStoreService.context.sessionId,
+            session_id: chatStoreService.sessionContext.sessionId,
             file_path: this.lastAudioPath,
           };
 
           myLoggerService.log("transcribe");
-          const transcribeResult = await myChatbotServiceAgent.send(
+          const transcribeResult = await this.myChatbotServiceAgent?.send(
             "transcribe",
             JSON.stringify(data)
           );
@@ -246,13 +250,13 @@ export class WorkerService {
         case "close-session":
           this.clearSessionData();
           this.stopRecording();
-          myChatbotServiceAgent.send(
+          this.myChatbotServiceAgent?.send(
             "closesession",
             JSON.stringify({
-              session_id: chatStoreService.context.sessionId,
+              session_id: chatStoreService.sessionContext.sessionId,
             })
           );
-          myATMServiceAgent.send({
+          this.myATMServiceAgent?.send({
             event: "session-closed",
           });
           break;
@@ -276,7 +280,7 @@ export class WorkerService {
   private async startSession() {
     myLoggerService.log("startSession");
     this.clearSessionData();
-    const sessionRes = await myChatbotServiceAgent.send(
+    const sessionRes = await this.myChatbotServiceAgent?.send(
       "opensession",
       JSON.stringify({
         action: "opensession",
@@ -293,11 +297,11 @@ export class WorkerService {
         "Hello, I am NCR teller assistant, what services do you need?";
       chatStoreService.clearAgentMessages();
       chatStoreService.addAgentMessage(helloMessage);
-      const ttsRes = await myChatbotServiceAgent.send(
+      const ttsRes = await this.myChatbotServiceAgent?.send(
         "generateaudio",
         JSON.stringify({
           action: "generateaudio",
-          sessionId: chatStoreService.context.sessionId,
+          sessionId: chatStoreService.sessionContext.sessionId,
           text: helloMessage,
         })
       );
@@ -309,7 +313,7 @@ export class WorkerService {
       ) {
         console.log("audio file name:", ttsRes.responseMessage.file_name);
         chatStoreService.setAudioUrl(
-          "http://127.0.0.1:8000/download/" + ttsRes.responseMessage.file_name
+          `${this.chatbotConnectionOption?.webApiUrl}/download/${ttsRes.responseMessage.file_name}`
         );
       }
     }
@@ -325,5 +329,5 @@ export class WorkerService {
   }
 }
 
-const myWorkerService: WorkerService = new WorkerService();
-export { myWorkerService };
+const myChatbotProcessor: ChatbotProcessor = new ChatbotProcessor();
+export { myChatbotProcessor };

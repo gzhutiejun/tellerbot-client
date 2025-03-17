@@ -1,12 +1,14 @@
-import "primeflex/primeflex.css";
-import "primeicons/primeicons.css";
-import "primereact/resources/primereact.css";
-import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "../assets/scss/styles.scss";
-import { myWorkerService } from "./services/work.service";
+import { myChatbotProcessor } from "./services/chatbot-processor";
+import { fetchJson } from "./util/ajax";
 
 async function main() {
-  myWorkerService.init();
+  const commConfig = await fetchJson("/config/comm-config.json");
+  //  console.log("communication config",commConfig);
+  myChatbotProcessor.init(
+    commConfig.servers.atmUrl,
+    commConfig.servers.chatbotUrl
+  );
 }
 
 main();

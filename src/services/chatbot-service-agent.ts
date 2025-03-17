@@ -118,6 +118,3 @@ export class ChatbotServiceAgent {
     return retVal;
   }
 }
-
-const myChatbotServiceAgent: ChatbotServiceAgent = new ChatbotServiceAgent();
-export { myChatbotServiceAgent };

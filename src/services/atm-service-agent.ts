@@ -74,5 +74,5 @@ export class AtmServiceAgent {
   }
 }
 
-const myATMServiceAgent: AtmServiceAgent = new AtmServiceAgent();
-export { myATMServiceAgent };
+
+

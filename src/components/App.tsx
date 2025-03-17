@@ -2,11 +2,10 @@ import Avatar from "./Avatar";
 import CustomerChatPanel from "./CustomerChatPanel";
 import Mic from "./Mic";
 import { Observer } from "mobx-react-lite";
-import AgentChatDetail from "./AgentChatDetail";
-import AgentChatPanel from "./AgentChatPanel";
 import ChatbotStatus from "./ChatbotStatus";
 import AudioPlayer from "./AudioPlayer";
 import StartChatButton from "./StartChatButton";
+import AgentChatPanel from "./AgentChatPanel";
 
 function App() {
   return (
@@ -24,7 +23,7 @@ function App() {
               </div>
 
               <div className="dialog">
-                <AgentChatDetail></AgentChatDetail>
+                <AgentChatPanel></AgentChatPanel>
                 <CustomerChatPanel></CustomerChatPanel>
                 <ChatbotStatus></ChatbotStatus>
                 <Mic></Mic>

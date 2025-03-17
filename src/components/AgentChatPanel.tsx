@@ -4,9 +4,16 @@ export default function AgentChatPanel() {
   return (
     <Observer>
       {() => (
-        <div className="chat-panel agent-chat">
-          <label>{chatStoreService.agentMessage}</label>
-    
+        <div className="chat-panel agent-chat-detail agent-detail-table">
+          <table>
+            <tbody>
+              {chatStoreService.agentMessages.map((message, index) => (
+                <tr key={index}>
+                  <td>{message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </Observer>
