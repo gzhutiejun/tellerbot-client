@@ -29,8 +29,25 @@ export class ChatbotServiceAgent {
     }
   }
 
-  async send(method: string, data: string | FormData): Promise<any> {
-    const res = await this.postRequest(method, data);
+  
+  async opensession(data: string | FormData): Promise<any> {
+    const res = await this.postRequest("opensession", data);
+    return res;
+  }
+  async closesession(data: string | FormData): Promise<any> {
+    const res = await this.postRequest("closesession", data);
+    return res;
+  }
+  async generateaudio(data: string | FormData): Promise<any> {
+    const res = await this.postRequest("generateaudio", data);
+    return res;
+  }
+  async transcribe(data: string | FormData): Promise<any> {
+    const res = await this.postRequest("transcribe", data);
+    return res;
+  }
+  async extract(data: string | FormData): Promise<any> {
+    const res = await this.postRequest("extract", data);
     return res;
   }
 
