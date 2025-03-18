@@ -144,12 +144,11 @@ export class MainProcessor {
       myLoggerService.log("audioChunk size:" + this.audioChunks.length);
 
       if (this.audioChunks.length > 0) {
-        //    const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
-        //   const audioUrl = URL.createObjectURL(audioBlob);
-        //   const audio = new Audio(audioUrl);
-        //   audio.play();
-
-        const audioBlob = new Blob(this.audioChunks);
+        const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
+        // const audioUrl = URL.createObjectURL(audioBlob);
+        // const audio = new Audio(audioUrl);
+        // audio.play();
+        this.audioChunks = [];
         const formData = new FormData();
         formData.append("file", audioBlob);
         chatStoreService.setStatus("Thinking...");
@@ -189,7 +188,7 @@ export class MainProcessor {
       }
     };
 
-    this.mediaRecorder?.start(200); // interval for trigger ondataavailable event
+    this.mediaRecorder?.start(100); // interval for trigger ondataavailable event
     this.startSilenceDetection();
   }
 
