@@ -6,6 +6,7 @@ import ChatbotStatus from "./ChatbotStatus";
 import AudioPlayer from "./AudioPlayer";
 import StartChatButton from "./StartChatButton";
 import AgentChatPanel from "./AgentChatPanel";
+import CancelButton from "./CancelButton";
 
 function App() {
   return (
@@ -25,9 +26,15 @@ function App() {
               <div className="dialog">
                 <AgentChatPanel></AgentChatPanel>
                 <CustomerChatPanel></CustomerChatPanel>
+
                 <ChatbotStatus></ChatbotStatus>
                 <Mic></Mic>
-                <StartChatButton></StartChatButton>
+
+                <div className="button-container">
+                  <StartChatButton></StartChatButton>
+                  <CancelButton></CancelButton>
+                </div>
+
                 <AudioPlayer></AudioPlayer>
               </div>
             </div>

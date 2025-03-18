@@ -12,6 +12,7 @@ export class ChatStoreService {
   conversationStarted: boolean = false;
   startConversationHandler: any = null;
   audioPlayCompleteHandler: any = null;
+  cancelHandler:any = null;
   sessionContext: ISessionContext = {
     sessionId: "",
   }
@@ -48,6 +49,11 @@ export class ChatStoreService {
       this.startConversationHandler();
     }
   }
+  cancel() {
+    if (this.cancelHandler) {
+      this.cancelHandler();
+    }
+  }
   setAudioPlayComplete() {
     if (this.audioPlayCompleteHandler) this.audioPlayCompleteHandler();
   }
@@ -58,6 +64,10 @@ export class ChatStoreService {
 
   registerAudioPlayCompleteHandler(handler: any) {
     this.audioPlayCompleteHandler = handler;
+  }
+
+  registerCancelHandler(handler:any) {
+    this.cancelHandler = handler;
   }
   resetSessionContext() {
     this.customerMessage = "";

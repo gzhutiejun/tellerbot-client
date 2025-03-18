@@ -75,11 +75,12 @@ export class MainProcessor {
     chatStoreService.setDebugMode(this.debugMode);
 
     chatStoreService.registerAudioPlayCompleteHandler(this.startListening);
-
+    chatStoreService.registerCancelHandler(this.cancelHandler);
+    
     await this.myATMServiceAgent.connect();
 
     this.myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
-
+    
     if (this.atmConnected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
       this.myATMServiceAgent.send({
@@ -246,6 +247,17 @@ export class MainProcessor {
     }, 100);
   };
 
+  private cancelHandler = () => {
+    this.myATMServiceAgent?.send({
+      action: "close-session",
+    });
+    this.myChatbotServiceAgent?.closesession(
+      JSON.stringify({
+        session_id: chatStoreService.sessionContext.sessionId,
+      })
+    );
+    chatStoreService.resetSessionContext();
+  }
   private atmMessageHandler = (message: string) => {
     console.log("message received from ATM", message);
     myLoggerService.log("message received from ATM");
@@ -340,18 +352,14 @@ export class MainProcessor {
       const req = {
         action: "extract",
         text: text,
-        format: {
-          transactionType: "",
-          cancelled: false,
-        },
-        template:
-          "extract data from the following text message and output a json object, transaction type as transactionType, cancel or exit as cancelled",
+        schema: "session",
       };
-      const res = await this.myChatbotServiceAgent?.extract(text);
+      const res = await this.myChatbotServiceAgent?.extract(JSON.stringify(req));
       console.log(res);
     }
   }
 }
+
 
 const mainProcessor: MainProcessor = new MainProcessor();
 export { mainProcessor };

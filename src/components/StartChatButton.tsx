@@ -7,7 +7,7 @@ export default function StartChatButton() {
       {() => (
         <If condition={chatStoreService.debugMode && !chatStoreService.conversationStarted}>
           <button
-            className="chatbot-start-button"
+            className="chatbot-button"
             onClick={() => chatStoreService.startConversation()}
           >
             Start Conversation
