@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { getGreetingTime } from "../util/util";
 import { AtmServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { ChatbotServiceAgent } from "./chatbot-service-agent";
@@ -16,7 +17,7 @@ export class ChatbotProcessor {
   private atmConnected = false;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
-  private myATMServiceAgent?: AtmServiceAgent ;
+  private myATMServiceAgent?: AtmServiceAgent;
   private myChatbotServiceAgent?: ChatbotServiceAgent;
   private audioContext?: AudioContext;
   private analyser?: AnalyserNode;
@@ -26,7 +27,7 @@ export class ChatbotProcessor {
   private silenceTimer: number = 0;
   private silenceStart?: number = undefined;
   private silenceThreshold = -35;
-  private silenceTimeout = 1000;
+  private silenceTimeout = 2000;
   private lastAudioPath = "";
   private maxListenTime = 20000;
   private listenTimer: number = 0;
@@ -61,7 +62,7 @@ export class ChatbotProcessor {
     }
 
     this.myATMServiceAgent = new AtmServiceAgent();
-    
+
     this.myATMServiceAgent.init(this.atmConnectionOption);
     chatStoreService.setDebugMode(this.debugMode);
 
@@ -293,8 +294,7 @@ export class ChatbotProcessor {
     ) {
       chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
 
-      const helloMessage =
-        "Hello, I am NCR teller assistant, what services do you need?";
+      const helloMessage = `Good ${getGreetingTime()}, I am NCR teller assistant, what services do you need?`;
       chatStoreService.clearAgentMessages();
       chatStoreService.addAgentMessage(helloMessage);
       const ttsRes = await this.myChatbotServiceAgent?.send(
