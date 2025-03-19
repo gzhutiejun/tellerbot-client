@@ -210,3 +210,6 @@ export class AtmServiceAgent {
     }
   }
 }
+
+const myATMServiceAgent = new AtmServiceAgent()
+export { myATMServiceAgent}

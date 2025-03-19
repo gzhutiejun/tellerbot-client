@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { getGreetingTime } from "../util/util";
-import { AtmServiceAgent } from "./atm-service-agent";
+import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
-import { ChatbotServiceAgent } from "./chatbot-service-agent";
+import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
 import { CashWithdrawalTxProcessor } from "./processors/cash-withdrawal-processor";
 import { IProcessor } from "./processors/processor.interface";
@@ -25,8 +24,6 @@ export class MainProcessor {
   private atmConnected = false;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
-  private myATMServiceAgent?: AtmServiceAgent;
-  private myChatbotServiceAgent?: ChatbotServiceAgent;
   private audioContext?: AudioContext;
   private analyser?: AnalyserNode;
 
@@ -63,30 +60,28 @@ export class MainProcessor {
     if (this.chatbotConnectionOption.webApiUrl!.endsWith("/")) {
       this.chatbotConnectionOption.webApiUrl!.slice(0, -1);
     }
-    this.myChatbotServiceAgent = new ChatbotServiceAgent();
-    this.myChatbotServiceAgent.init(this.chatbotConnectionOption);
 
-    this.chatbotServerConnected = await this.myChatbotServiceAgent.connect();
+    myChatbotServiceAgent.init(this.chatbotConnectionOption);
+
+    this.chatbotServerConnected = await myChatbotServiceAgent.connect();
 
     if (!this.chatbotServerConnected) {
       myLoggerService.log("Chatbot service is not connected.");
     }
 
-    this.myATMServiceAgent = new AtmServiceAgent();
-
-    this.myATMServiceAgent.init(this.atmConnectionOption);
+    myATMServiceAgent.init(this.atmConnectionOption);
     chatStoreService.setDebugMode(this.debugMode);
 
     chatStoreService.registerAudioPlayCompleteHandler(this.startListening);
     chatStoreService.registerCancelHandler(this.cancelHandler);
 
-    await this.myATMServiceAgent.connect();
+    await myATMServiceAgent.connect();
 
-    this.myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
+    myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
 
     if (this.atmConnected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
-      this.myATMServiceAgent.send({
+      myATMServiceAgent.send({
         event: "ai-teller-ready",
       });
     }
@@ -157,7 +152,7 @@ export class MainProcessor {
         formData.append("file", audioBlob);
         chatStoreService.setStatus("Thinking...");
         myLoggerService.log("upload audio file");
-        const uploadResult = await this.myChatbotServiceAgent?.upload(formData);
+        const uploadResult = await myChatbotServiceAgent?.upload(formData);
 
         if (
           uploadResult &&
@@ -168,13 +163,12 @@ export class MainProcessor {
           myLoggerService.log("uploaded file:" + this.lastAudioPath);
 
           const data = {
-            action: "transcribe",
             session_id: chatStoreService.sessionContext.sessionId,
             file_path: this.lastAudioPath,
           };
 
           myLoggerService.log("transcribe");
-          const transcribeResult = await this.myChatbotServiceAgent?.transcribe(
+          const transcribeResult = await myChatbotServiceAgent?.transcribe(
             JSON.stringify(data)
           );
           chatStoreService.setStatus("");
@@ -251,10 +245,10 @@ export class MainProcessor {
   };
 
   private cancelHandler = () => {
-    this.myATMServiceAgent?.send({
+    myATMServiceAgent?.send({
       action: "close-session",
     });
-    this.myChatbotServiceAgent?.closesession(
+    myChatbotServiceAgent?.closesession(
       JSON.stringify({
         session_id: chatStoreService.sessionContext.sessionId,
       })
@@ -273,12 +267,12 @@ export class MainProcessor {
         case "close-session":
           this.clearSessionData();
           this.stopRecording();
-          this.myChatbotServiceAgent?.closesession(
+          myChatbotServiceAgent?.closesession(
             JSON.stringify({
               session_id: chatStoreService.sessionContext.sessionId,
             })
           );
-          this.myATMServiceAgent?.send({
+          myATMServiceAgent?.send({
             event: "session-closed",
           });
           break;
@@ -305,39 +299,12 @@ export class MainProcessor {
     myLoggerService.log("startSession");
     this.clearSessionData();
     this.currentStage = Stage.session;
-    const sessionRes = await this.myChatbotServiceAgent?.opensession(
-      JSON.stringify({
-        action: "opensession",
-      })
-    );
-    if (
-      sessionRes &&
-      sessionRes.responseMessage &&
-      sessionRes.responseMessage.session_id
-    ) {
-      chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
 
-      const helloMessage = `Good ${getGreetingTime()}, I am NCR teller assistant, what services do you need?`;
-      chatStoreService.clearAgentMessages();
-      chatStoreService.addAgentMessage(helloMessage);
-      const ttsRes = await this.myChatbotServiceAgent?.generateaudio(
-        JSON.stringify({
-          action: "generateaudio",
-          sessionId: chatStoreService.sessionContext.sessionId,
-          text: helloMessage,
-        })
-      );
-
-      if (
-        ttsRes &&
-        ttsRes.responseMessage &&
-        ttsRes.responseMessage.file_name
-      ) {
-        chatStoreService.setAudioUrl(
-          `${this.chatbotConnectionOption?.webApiUrl}/download/${ttsRes.responseMessage.file_name}`
-        );
-      }
-    }
+    this.currentSessionProcessor = new SessionProcessor();
+    this.currentSessionProcessor.chatbotWebUrl =
+      this.chatbotConnectionOption!.webApiUrl!;
+    
+      this.currentSessionProcessor.start();
   }
   private startListening = () => {
     myLoggerService.log("startListening");
@@ -349,16 +316,13 @@ export class MainProcessor {
 
     if (!chatStoreService.sessionContext.sessionId) return;
 
-    if (!this.currentSessionProcessor)
-      this.currentSessionProcessor = new SessionProcessor();
-
     chatStoreService.setCustomerMessage(user_text);
 
     if (this.currentStage === Stage.session) {
       if (
         !chatStoreService.sessionContext.transactionContext?.currentTransaction
       ) {
-        const sessionAction = await this.currentSessionProcessor.process(
+        const sessionAction = await this.currentSessionProcessor!.process(
           user_text
         );
         console.log(sessionAction);
@@ -380,9 +344,8 @@ export class MainProcessor {
             messages += item + "." + " ";
           });
 
-          const ttsRes = await this.myChatbotServiceAgent?.generateaudio(
+          const ttsRes = await myChatbotServiceAgent?.generateaudio(
             JSON.stringify({
-              action: "generateaudio",
               sessionId: chatStoreService.sessionContext.sessionId,
               text: messages,
             })
@@ -417,7 +380,7 @@ export class MainProcessor {
         console.log(temp);
       }
     } else if (this.currentStage === Stage.transaction) {
-      const txAction = await this.currentSessionProcessor.process(user_text);
+      const txAction = await this.currentSessionProcessor!.process(user_text);
       console.log(txAction);
     }
   }

@@ -29,7 +29,6 @@ export class ChatbotServiceAgent {
     }
   }
 
-  
   async opensession(data: string): Promise<any> {
     const res = await this.postRequest("opensession", data);
     return res;
@@ -58,23 +57,20 @@ export class ChatbotServiceAgent {
     };
 
     try {
-      myLoggerService.log(`download: ${file_path}`)
-      const res = await fetch(
-        `${this.opt?.webApiUrl}/download/${file_path}`, 
-      );
-      myLoggerService.log(`download complete`)
+      myLoggerService.log(`download: ${file_path}`);
+      const res = await fetch(`${this.opt?.webApiUrl}/download/${file_path}`);
+      myLoggerService.log(`download complete`);
       if (res.ok) {
         retVal.errorCode = "success";
         retVal.responseMessage = await res.json();
         // myLoggerService.log(retVal);
       }
-
     } catch (e: any) {
       retVal.errorCode = "download failure";
       myLoggerService.log(e);
     }
 
-    return ;
+    return;
   }
   async upload(data: FormData): Promise<any> {
     const retVal: BusOpResponse = {
@@ -99,10 +95,7 @@ export class ChatbotServiceAgent {
 
     return retVal;
   }
-  private async postRequest(
-    method: string,
-    data: string
-  ): Promise<any> {
+  private async postRequest(method: string, data: string): Promise<any> {
     const retVal: BusOpResponse = {
       method: method,
       errorCode: "timeout",
@@ -131,3 +124,7 @@ export class ChatbotServiceAgent {
     return retVal;
   }
 }
+
+const myChatbotServiceAgent = new ChatbotServiceAgent();
+
+export { myChatbotServiceAgent };
