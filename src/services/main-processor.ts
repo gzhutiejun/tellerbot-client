@@ -6,7 +6,9 @@ import { AtmServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { ChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
+import { CashWithdrawalTxProcessor } from "./processors/cash-withdrawal-processor";
 import { IProcessor } from "./processors/processor.interface";
+import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
 
 export enum Stage {
@@ -39,6 +41,7 @@ export class MainProcessor {
   private listenTimer: number = 0;
 
   currentStage: Stage = Stage.idle;
+  currentSessionProcessor?: IProcessor;
   currentTransactionProcessor?: IProcessor;
   constructor() {}
 
@@ -76,11 +79,11 @@ export class MainProcessor {
 
     chatStoreService.registerAudioPlayCompleteHandler(this.startListening);
     chatStoreService.registerCancelHandler(this.cancelHandler);
-    
+
     await this.myATMServiceAgent.connect();
 
     this.myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
-    
+
     if (this.atmConnected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
       this.myATMServiceAgent.send({
@@ -256,7 +259,7 @@ export class MainProcessor {
       })
     );
     chatStoreService.resetSessionContext();
-  }
+  };
   private atmMessageHandler = (message: string) => {
     console.log("message received from ATM", message);
     myLoggerService.log("message received from ATM");
@@ -293,6 +296,7 @@ export class MainProcessor {
 
   private clearSessionData() {
     chatStoreService.setSessionId("");
+    this.currentSessionProcessor = undefined;
     this.currentTransactionProcessor = undefined;
   }
 
@@ -328,7 +332,6 @@ export class MainProcessor {
         ttsRes.responseMessage &&
         ttsRes.responseMessage.file_name
       ) {
-        console.log("audio file name:", ttsRes.responseMessage.file_name);
         chatStoreService.setAudioUrl(
           `${this.chatbotConnectionOption?.webApiUrl}/download/${ttsRes.responseMessage.file_name}`
         );
@@ -340,25 +343,84 @@ export class MainProcessor {
     this.startRecording();
   };
 
-  private async processTranscript(text: string) {
-    myLoggerService.log(`processTranscript: ${text}`);
-    chatStoreService.setCustomerMessage(text);
+  private async processTranscript(user_text: string) {
+    myLoggerService.log(`processTranscript: ${user_text}`);
 
-    if (
-      this.currentStage === Stage.session &&
-      !chatStoreService.sessionContext.transactionContext
-    ) {
-      const req = {
-        action: "extract",
-        text: text,
-        schema: "session",
-      };
-      const res = await this.myChatbotServiceAgent?.extract(JSON.stringify(req));
-      console.log(res);
+    if (!chatStoreService.sessionContext.sessionId) return;
+    
+    if (!this.currentSessionProcessor)
+      this.currentSessionProcessor = new SessionProcessor();
+
+    chatStoreService.setCustomerMessage(user_text);
+
+    if (this.currentStage === Stage.session) {
+      if (
+        !chatStoreService.sessionContext.transactionContext?.currentTransaction
+      ) {
+        const sessionAction = await this.currentSessionProcessor.process(
+          user_text
+        );
+        console.log(sessionAction);
+
+        if (sessionAction.actionType === "Cancel") {
+          myLoggerService.log("cancelled");
+          return;
+        }
+        if (sessionAction.actionType === "End") {
+          myLoggerService.log("end");
+          return;
+        }
+
+        if (sessionAction.prompt && sessionAction.prompt.messages) {
+          let messages = "";
+          chatStoreService.clearAgentMessages();
+          sessionAction.prompt.messages.map((item) => {
+            chatStoreService.addAgentMessage(item);
+            messages += item + "." + " ";
+          });
+
+          const ttsRes = await this.myChatbotServiceAgent?.generateaudio(
+            JSON.stringify({
+              action: "generateaudio",
+              sessionId: chatStoreService.sessionContext.sessionId,
+              text: messages,
+            })
+          );
+
+          if (
+            ttsRes &&
+            ttsRes.responseMessage &&
+            ttsRes.responseMessage.file_name
+          ) {
+            chatStoreService.setAudioUrl(
+              `${this.chatbotConnectionOption?.webApiUrl}/download/${ttsRes.responseMessage.file_name}`
+            );
+          }
+          return;
+        }
+        //create transaction processor
+        switch (
+          chatStoreService.sessionContext.transactionContext?.currentTransaction
+        ) {
+          case "cashwithdrawal":
+            this.currentTransactionProcessor = new CashWithdrawalTxProcessor();
+            this.currentTransactionProcessor.start();
+            break;
+          case "timedeposit":
+            break;
+          default:
+            break;
+        }
+      } else {
+        const temp = await this.currentTransactionProcessor?.process(user_text);
+        console.log(temp);
+      }
+    } else if (this.currentStage === Stage.transaction) {
+      const txAction = await this.currentSessionProcessor.process(user_text);
+      console.log(txAction);
     }
   }
 }
-
 
 const mainProcessor: MainProcessor = new MainProcessor();
 export { mainProcessor };

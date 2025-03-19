@@ -1,12 +1,13 @@
-export type ActionType = "Continue" | "Cancel" | "End";
+export type ChatbotActionType = "Continue" | "Cancel" | "End";
 export interface IPrompt {
     messages?: string[];
     language?: string;
 }
-export interface Action {
-    actionType: ActionType;
+export interface ChatbotAction {
+    actionType: ChatbotActionType;
     prompt: IPrompt;
 }
 export interface IProcessor {
-    process(text: string): Action;
+    start():Promise<ChatbotAction>;
+    process(text: string): Promise<ChatbotAction>;
 }
