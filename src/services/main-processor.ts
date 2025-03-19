@@ -152,6 +152,7 @@ export class MainProcessor {
         // const audio = new Audio(audioUrl);
         // audio.play();
         this.audioChunks = [];
+
         const formData = new FormData();
         formData.append("file", audioBlob);
         chatStoreService.setStatus("Thinking...");
@@ -347,7 +348,7 @@ export class MainProcessor {
     myLoggerService.log(`processTranscript: ${user_text}`);
 
     if (!chatStoreService.sessionContext.sessionId) return;
-    
+
     if (!this.currentSessionProcessor)
       this.currentSessionProcessor = new SessionProcessor();
 

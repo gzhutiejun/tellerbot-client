@@ -30,23 +30,23 @@ export class ChatbotServiceAgent {
   }
 
   
-  async opensession(data: string | FormData): Promise<any> {
+  async opensession(data: string): Promise<any> {
     const res = await this.postRequest("opensession", data);
     return res;
   }
-  async closesession(data: string | FormData): Promise<any> {
+  async closesession(data: string): Promise<any> {
     const res = await this.postRequest("closesession", data);
     return res;
   }
-  async generateaudio(data: string | FormData): Promise<any> {
+  async generateaudio(data: string): Promise<any> {
     const res = await this.postRequest("generateaudio", data);
     return res;
   }
-  async transcribe(data: string | FormData): Promise<any> {
+  async transcribe(data: string): Promise<any> {
     const res = await this.postRequest("transcribe", data);
     return res;
   }
-  async extract(data: string | FormData): Promise<any> {
+  async extract(data: string): Promise<any> {
     const res = await this.postRequest("extract", data);
     return res;
   }
@@ -84,10 +84,6 @@ export class ChatbotServiceAgent {
     try {
       const req = {
         method: "POST",
-        headers: {
-          // "Content-Type": "multipart/form-data",
-          Accept: "multipart/form-data",
-        },
         body: data,
       };
       const res = await fetch(`${this.opt?.webApiUrl}/upload`, req);
@@ -105,7 +101,7 @@ export class ChatbotServiceAgent {
   }
   private async postRequest(
     method: string,
-    data: string | FormData
+    data: string
   ): Promise<any> {
     const retVal: BusOpResponse = {
       method: method,
