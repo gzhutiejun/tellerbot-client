@@ -1,4 +1,4 @@
-export type ChatbotActionType = "NewTransaction" | "Continue" | "Cancel" | "End";
+export type ChatbotActionType = "NewTransaction" | "Continue" | "Cancel" | "End" | "Notification";
 export interface IPrompt {
   messages?: string[];
   language?: string;

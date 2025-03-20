@@ -7,7 +7,7 @@ import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
 import { CashWithdrawalTxProcessor } from "./processors/cash-withdrawal-processor";
-import { ChatbotAction, IProcessor, TransactionName } from "./processors/processor.interface";
+import { IProcessor, TransactionName } from "./processors/processor.interface";
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
 
@@ -27,7 +27,7 @@ export class MainProcessor {
   private chatbotConnectionOption?: ConnectionOptions;
   private audioContext?: AudioContext;
   private analyser?: AnalyserNode;
-
+  private language = "zh";
   private bufferLength: number = 0;
   private dataArray?: Float32Array;
   private silenceTimer: number = 0;
@@ -49,6 +49,8 @@ export class MainProcessor {
    */
   async init(atmUrl: string, chatbotUrl: string) {
     myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
+
+    chatStoreService.setLanguage(this.language);
     this.atmConnectionOption = {
       webApiUrl: atmUrl,
     };
@@ -351,6 +353,7 @@ export class MainProcessor {
             JSON.stringify({
               sessionId: chatStoreService.sessionContext.sessionId,
               text: messages,
+              language: chatStoreService.language
             })
           );
 

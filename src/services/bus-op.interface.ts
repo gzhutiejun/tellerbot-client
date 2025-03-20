@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface BusOpResponse {
-    method: string;
-    errorCode: string;
+    success: boolean;
     responseMessage?: any;
   }
   

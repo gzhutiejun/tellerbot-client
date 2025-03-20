@@ -13,6 +13,8 @@ export class ChatStoreService {
   startConversationHandler: any = null;
   audioPlayCompleteHandler: any = null;
   cancelHandler:any = null;
+  notification: boolean = false;
+  language: string = "en";
   sessionContext: ISessionContext = {
     sessionId: "",
   }
@@ -33,6 +35,13 @@ export class ChatStoreService {
   }
   setMic(mic: boolean) {
     this.mic = mic;
+  }
+  setLanguage(lang: string) {
+    this.language = lang;
+  }
+
+  setNotification(status: boolean) {
+    this.notification = status;
   }
   setStatus(status: string) {
     this.status = status;
@@ -55,6 +64,7 @@ export class ChatStoreService {
     }
   }
   setAudioPlayComplete() {
+    if (this.notification) return;
     if (this.audioPlayCompleteHandler) this.audioPlayCompleteHandler();
   }
 

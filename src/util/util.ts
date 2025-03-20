@@ -74,15 +74,15 @@ export function padZeroToSingleDigit(value: number) {
   return retVal;
 }
 
-export function getGreetingTime() {
+export function getGreetingWords() {
   const currentHour = new Date().getHours();
   let ret;
   if (currentHour >= 12 && currentHour <= 17) {
-    ret = "afternoon";
+    ret = "下午好";
   } else if (currentHour >= 17) {
-    ret = "evening";
+    ret = "晚上好";
   } else {
-    ret = "morning";
+    ret = "早晨好";
   }
 
   return ret;

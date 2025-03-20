@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { extractTranscribedData, getGreetingTime } from "../../util/util";
+import { extractTranscribedData, getGreetingWords } from "../../util/util";
 import { chatStoreService } from "../chat-store.service";
 import {
   myChatbotServiceAgent
@@ -29,7 +29,7 @@ export class SessionProcessor implements IProcessor {
     ) {
       chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
 
-      const helloMessage = `Good ${getGreetingTime()}, I am NCR teller assistant, what services do you need?`;
+      const helloMessage = `${getGreetingWords()}, 我是NCR智能柜员， 请问您需要什么服务`;
       chatStoreService.clearAgentMessages();
       chatStoreService.addAgentMessage(helloMessage);
       const ttsRes = await myChatbotServiceAgent?.generateaudio(
@@ -37,6 +37,7 @@ export class SessionProcessor implements IProcessor {
           action: "generateaudio",
           sessionId: chatStoreService.sessionContext.sessionId,
           text: helloMessage,
+          language: chatStoreService.language
         })
       );
 
@@ -82,7 +83,7 @@ export class SessionProcessor implements IProcessor {
     this.nextAction = {
       actionType: "Continue",
       prompt: {
-        messages: ["what services do you need?"],
+        messages: ["请问您需要什么服务?"],
       },
     };
 

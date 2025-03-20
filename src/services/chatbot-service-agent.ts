@@ -52,8 +52,7 @@ export class ChatbotServiceAgent {
 
   async download(file_path: string): Promise<any> {
     const retVal: BusOpResponse = {
-      method: "upload",
-      errorCode: "timeout",
+      success: false,
     };
 
     try {
@@ -61,12 +60,11 @@ export class ChatbotServiceAgent {
       const res = await fetch(`${this.opt?.webApiUrl}/download/${file_path}`);
       myLoggerService.log(`download complete`);
       if (res.ok) {
-        retVal.errorCode = "success";
+        retVal.success = true;
         retVal.responseMessage = await res.json();
         // myLoggerService.log(retVal);
       }
     } catch (e: any) {
-      retVal.errorCode = "download failure";
       myLoggerService.log(e);
     }
 
@@ -74,8 +72,7 @@ export class ChatbotServiceAgent {
   }
   async upload(data: FormData): Promise<any> {
     const retVal: BusOpResponse = {
-      method: "upload",
-      errorCode: "timeout",
+      success: false,
     };
     try {
       const req = {
@@ -84,12 +81,11 @@ export class ChatbotServiceAgent {
       };
       const res = await fetch(`${this.opt?.webApiUrl}/upload`, req);
       if (res.ok) {
-        retVal.errorCode = "success";
+        retVal.success = true;
         retVal.responseMessage = await res.json();
         // myLoggerService.log(retVal);
       }
     } catch (e: any) {
-      retVal.errorCode = "sendFailure";
       myLoggerService.log(e);
     }
 
@@ -97,8 +93,7 @@ export class ChatbotServiceAgent {
   }
   private async postRequest(method: string, data: string): Promise<any> {
     const retVal: BusOpResponse = {
-      method: method,
-      errorCode: "timeout",
+      success: false,
     };
 
     try {
@@ -112,12 +107,11 @@ export class ChatbotServiceAgent {
       };
       const res = await fetch(`${this.opt?.webApiUrl}/${method}`, req);
       if (res.ok) {
-        retVal.errorCode = "success";
+        retVal.success = true;
         retVal.responseMessage = await res.json();
         // myLoggerService.log(retVal);
       }
     } catch (e: any) {
-      retVal.errorCode = "sendFailure";
       myLoggerService.log(e);
     }
 
