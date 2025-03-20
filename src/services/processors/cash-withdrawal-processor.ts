@@ -10,7 +10,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     myLoggerService.log("CashWithdrawalTxProcessor: start");
   }
   async process(text: string): Promise<ChatbotAction> {
-    myLoggerService.log("CashWithdrawalTxProcessor: process" + text);
+    myLoggerService.log("CashWithdrawalTxProcessor: process: " + text);
     const nextAction: ChatbotAction = {
       actionType: "Continue",
       prompt: {},

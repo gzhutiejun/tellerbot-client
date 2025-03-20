@@ -1,45 +1,89 @@
-export function getFormattedDate(): string {
-    let dateString = "";
-    const date: Date = new Date();
-    const day = padZeroToSingleDigit(date.getDate());
-    const month = padZeroToSingleDigit(date.getMonth() + 1);
-    const year = date.getFullYear().toString();
-    const hours = padZeroToSingleDigit(date.getHours());
-    const minutes = padZeroToSingleDigit(date.getMinutes());
-    const seconds = padZeroToSingleDigit(date.getSeconds());
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-    dateString =
-      year +
-      "-" +
-      month +
-      "-" +
-      day +
-      " " +
-      hours +
-      ":" +
-      minutes +
-      ":" +
-      seconds;
+import { CashWithdrawalTxProcessor } from "../services/processors/cash-withdrawal-processor";
+import {
+  IProcessor,
+  TransactionName,
+} from "../services/processors/processor.interface";
 
-    return dateString;
+export function extractTranscribedData(messageData: any): any {
+  if (
+    !messageData ||
+    typeof messageData !== "object" ||
+    !messageData.responseMessage ||
+    !messageData.responseMessage.success
+  ) {
+    return undefined;
+  }
+  if (
+    !messageData.responseMessage.data ||
+    messageData.responseMessage.data.length < 5 ||
+    messageData.responseMessage.data[0] !== "{"
+  ) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(messageData.responseMessage.data);
+  } catch (error) {
+    console.log(error);
+    return undefined;
   }
 
-  export function padZeroToSingleDigit(value: number) {
-    const retVal: string = value < 10 ? "0" + value : value.toString();
-    return retVal;
-  }
-
-export function getGreetingTime() {
-	const currentHour = new Date().getHours();
-    let ret;
-	if(currentHour >= 12 && currentHour <= 17) {
-		ret = "afternoon";
-	} else if(currentHour >= 17) {
-		ret = "evening";
-	} else {
-		ret = "morning";
-	}
-	
-	return ret;
+  return messageData.responseMessage.data;
 }
 
+export function createTransactionProcessor(tx: TransactionName): IProcessor {
+  let processor: IProcessor | undefined;
+  switch (tx) {
+    case "cash-withdrawal":
+      processor = new CashWithdrawalTxProcessor();
+      break;
+    case "time-deposit":
+      break;
+  }
+  return processor!;
+}
+export function getFormattedDate(): string {
+  let dateString = "";
+  const date: Date = new Date();
+  const day = padZeroToSingleDigit(date.getDate());
+  const month = padZeroToSingleDigit(date.getMonth() + 1);
+  const year = date.getFullYear().toString();
+  const hours = padZeroToSingleDigit(date.getHours());
+  const minutes = padZeroToSingleDigit(date.getMinutes());
+  const seconds = padZeroToSingleDigit(date.getSeconds());
+
+  dateString =
+    year +
+    "-" +
+    month +
+    "-" +
+    day +
+    " " +
+    hours +
+    ":" +
+    minutes +
+    ":" +
+    seconds;
+
+  return dateString;
+}
+
+export function padZeroToSingleDigit(value: number) {
+  const retVal: string = value < 10 ? "0" + value : value.toString();
+  return retVal;
+}
+
+export function getGreetingTime() {
+  const currentHour = new Date().getHours();
+  let ret;
+  if (currentHour >= 12 && currentHour <= 17) {
+    ret = "afternoon";
+  } else if (currentHour >= 17) {
+    ret = "evening";
+  } else {
+    ret = "morning";
+  }
+
+  return ret;
+}

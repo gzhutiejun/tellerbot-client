@@ -1,15 +1,18 @@
-import { getGreetingTime } from "../../util/util";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { extractTranscribedData, getGreetingTime } from "../../util/util";
 import { chatStoreService } from "../chat-store.service";
 import {
   myChatbotServiceAgent
 } from "../chatbot-service-agent";
 import { myLoggerService } from "../logger.service";
-import { ChatbotAction, IProcessor } from "./processor.interface";
+import { ChatbotAction, IProcessor, TransactionName } from "./processor.interface";
 
 export class SessionProcessor implements IProcessor {
   chatbotWebUrl: string = "";
+  private nextAction: ChatbotAction;
   constructor() {
     myLoggerService.log("create Session Processor");
+    this.nextAction = {};
   }
   async start() {
     myLoggerService.log("SessionProcessor: start");
@@ -61,16 +64,37 @@ export class SessionProcessor implements IProcessor {
       },
     };
     const res = await myChatbotServiceAgent.extract(JSON.stringify(req));
-
-  
     myLoggerService.log(res);
-    const nextAction: ChatbotAction = {
+
+    const data = extractTranscribedData(res);
+    myLoggerService.log("Transcribed data:" + JSON.stringify(data));
+    this.nextAction = {}
+    const tx = this.identifyTransactionName(data);
+    if (tx !== "none") {
+      // start a new transaction
+      this.nextAction = {
+        actionType: "NewTransaction",
+        transactionName: tx
+      };
+      return this.nextAction;
+    }
+
+    this.nextAction = {
       actionType: "Continue",
       prompt: {
         messages: ["what services do you need?"],
       },
     };
 
-    return nextAction;
+    return this.nextAction;
+  }
+
+  private identifyTransactionName(data: any): TransactionName {
+    if (!data.transaction) return "none";
+    const val: string = data.transaction.toLowerCase();
+    if (!val) return "none";
+    if (val.includes("withdraw")) return "cash-withdrawal";
+    if (val.includes("time") && val.includes("deposit")) return "time-deposit";    
+    return "none"
   }
 }

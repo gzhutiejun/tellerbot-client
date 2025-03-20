@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createTransactionProcessor } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
 import { CashWithdrawalTxProcessor } from "./processors/cash-withdrawal-processor";
-import { IProcessor } from "./processors/processor.interface";
+import { ChatbotAction, IProcessor, TransactionName } from "./processors/processor.interface";
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
 
@@ -47,7 +48,7 @@ export class MainProcessor {
    * Report ai-teller-ready event to inform ATM that session is ready
    */
   async init(atmUrl: string, chatbotUrl: string) {
-    console.log(atmUrl, chatbotUrl);
+    myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
     this.atmConnectionOption = {
       webApiUrl: atmUrl,
     };
@@ -256,8 +257,7 @@ export class MainProcessor {
     chatStoreService.resetSessionContext();
   };
   private atmMessageHandler = (message: string) => {
-    console.log("message received from ATM", message);
-    myLoggerService.log("message received from ATM");
+    myLoggerService.log("message received from ATM: " + message);
     const atmMessage = JSON.parse(message);
     if (atmMessage.action) {
       switch (atmMessage.action) {
@@ -325,7 +325,7 @@ export class MainProcessor {
         const sessionAction = await this.currentSessionProcessor!.process(
           user_text
         );
-        console.log(sessionAction);
+        myLoggerService.log("sessionAction: " + JSON.stringify(sessionAction));
 
         if (sessionAction.actionType === "Cancel") {
           myLoggerService.log("cancelled");
@@ -336,6 +336,9 @@ export class MainProcessor {
           return;
         }
 
+        if (sessionAction.actionType === "NewTransaction") {
+          this.startNewTransaction(sessionAction.transactionName!);
+        }
         if (sessionAction.prompt && sessionAction.prompt.messages) {
           let messages = "";
           chatStoreService.clearAgentMessages();
@@ -376,13 +379,29 @@ export class MainProcessor {
             break;
         }
       } else {
-        const temp = await this.currentTransactionProcessor?.process(user_text);
-        console.log(temp);
+        const nextAction = await this.currentTransactionProcessor?.process(user_text);
+
+        if (!nextAction && !nextAction!.actionType) {
+          myLoggerService.log(JSON.stringify(nextAction));
+          if (nextAction!.actionType === "NewTransaction") {
+            this.startNewTransaction(nextAction!.transactionName!);
+          }
+        } else {
+          myLoggerService.log("invalid action");
+        }
+        
+
       }
     } else if (this.currentStage === Stage.transaction) {
       const txAction = await this.currentSessionProcessor!.process(user_text);
-      console.log(txAction);
+      myLoggerService.log("txAction: " + JSON.stringify(txAction));
     }
+  }
+
+  private startNewTransaction(tx: TransactionName) {
+    this.currentTransactionProcessor = createTransactionProcessor(tx);
+    this.currentTransactionProcessor!.chatbotWebUrl = this.atmConnectionOption!.webApiUrl!;
+    this.currentTransactionProcessor?.start();
   }
 }
 
