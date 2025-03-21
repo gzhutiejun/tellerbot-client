@@ -1,13 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createTransactionProcessor } from "../util/util";
+import { createTransactionProcessor, speak } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
 import { CashWithdrawalTxProcessor } from "./processors/cash-withdrawal-processor";
-import { IProcessor, TransactionName } from "./processors/processor.interface";
+import {
+  ChatbotAction,
+  ChatbotActionType,
+  IProcessor,
+  TransactionName,
+} from "./processors/processor.interface";
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
 
@@ -37,9 +42,11 @@ export class MainProcessor {
   private maxListenTime = 20000;
   private listenTimer: number = 0;
 
-  currentStage: Stage = Stage.idle;
-  currentSessionProcessor?: IProcessor;
-  currentTransactionProcessor?: IProcessor;
+  currentAction: ChatbotAction = {
+    actionType: "Idle",
+  };
+  sessionProcessor?: IProcessor;
+  transactionProcessor?: IProcessor;
   constructor() {}
 
   /**
@@ -188,7 +195,9 @@ export class MainProcessor {
     };
 
     this.mediaRecorder?.start(100); // interval for trigger ondataavailable event
-    this.startSilenceDetection();
+    setTimeout(() => {
+      this.startSilenceDetection();
+    }, 2000);
   }
 
   /**
@@ -291,20 +300,19 @@ export class MainProcessor {
 
   private clearSessionData() {
     chatStoreService.setSessionId("");
-    this.currentSessionProcessor = undefined;
-    this.currentTransactionProcessor = undefined;
+    this.sessionProcessor = undefined;
+    this.transactionProcessor = undefined;
   }
 
   private async startSession() {
     myLoggerService.log("startSession");
     this.clearSessionData();
-    this.currentStage = Stage.session;
+    this.currentAction.actionType = "NewSession";
 
-    this.currentSessionProcessor = new SessionProcessor();
-    this.currentSessionProcessor.chatbotWebUrl =
-      this.chatbotConnectionOption!.webApiUrl!;
-    
-      this.currentSessionProcessor.start();
+    this.sessionProcessor = new SessionProcessor();
+
+    chatStoreService.chatbotUrl = this.chatbotConnectionOption!.webApiUrl!;
+    this.sessionProcessor.start();
   }
   private startListening = () => {
     myLoggerService.log("startListening");
@@ -317,92 +325,62 @@ export class MainProcessor {
     if (!chatStoreService.sessionContext.sessionId) return;
 
     chatStoreService.setCustomerMessage(user_text);
+    myLoggerService.log(
+      "processTranscript currentAction1:" + JSON.stringify(this.currentAction)
+    );
 
-    if (this.currentStage === Stage.session) {
-      if (
-        !chatStoreService.sessionContext.transactionContext?.currentTransaction
-      ) {
-        const sessionAction = await this.currentSessionProcessor!.process(
-          user_text
+    switch (this.currentAction.actionType!) {
+      case "NewSession":
+      case "ContinueSession":
+        this.currentAction = await this.sessionProcessor!.process(user_text)!;
+        myLoggerService.log(
+          "processTranscript currentAction2:" +
+            JSON.stringify(this.currentAction)
         );
-        myLoggerService.log("sessionAction: " + JSON.stringify(sessionAction));
 
-        if (sessionAction.actionType === "Cancel") {
-          myLoggerService.log("cancelled");
-          return;
-        }
-        if (sessionAction.actionType === "EndTransaction") {
-          myLoggerService.log("EndTransaction");
-          return;
-        }
-
-        if (sessionAction.actionType === "NewTransaction") {
-          this.startNewTransaction(sessionAction.transactionName!);
-        }
-        if (sessionAction.prompt && sessionAction.prompt.messages) {
-          let messages = "";
-          chatStoreService.clearAgentMessages();
-          sessionAction.prompt.messages.map((item) => {
-            chatStoreService.addAgentMessage(item);
-            messages += item + "." + " ";
-          });
-
-          const ttsRes = await myChatbotServiceAgent?.generateaudio(
-            JSON.stringify({
-              sessionId: chatStoreService.sessionContext.sessionId,
-              text: messages,
-              language: chatStoreService.language
-            })
+        if (this.currentAction.actionType === "Cancel") {
+          this.cancelHandler();
+        } else if (this.currentAction.actionType === "ContinueSession") {
+          await speak(this.currentAction!.prompt!);
+        } else if (this.currentAction.actionType === "NewTransaction") {
+          this.transactionProcessor = createTransactionProcessor(
+            this.currentAction.transactionName!
           );
-
-          if (
-            ttsRes &&
-            ttsRes.responseMessage &&
-            ttsRes.responseMessage.file_name
-          ) {
-            chatStoreService.setAudioUrl(
-              `${this.chatbotConnectionOption?.webApiUrl}/download/${ttsRes.responseMessage.file_name}`
-            );
+          this.currentAction = {
+            actionType: "ContinueTransaction",
           }
-          return;
+          this.transactionProcessor?.start();
         }
-        //create transaction processor
-        switch (
-          chatStoreService.sessionContext.transactionContext?.currentTransaction
-        ) {
-          case "cashwithdrawal":
-            this.currentTransactionProcessor = new CashWithdrawalTxProcessor();
-            this.currentTransactionProcessor.start();
-            break;
-          case "timedeposit":
-            break;
-          default:
-            break;
-        }
-      } else {
-        const nextAction = await this.currentTransactionProcessor?.process(user_text);
+        break;
+      case "Cancel":
+        this.cancelHandler();
+        break;
+      case "ContinueTransaction":
+        this.currentAction = await this.transactionProcessor!.process(user_text)!;
+        myLoggerService.log(
+          "processTranscript currentAction3:" +
+            JSON.stringify(this.currentAction)
+        );
 
-        if (!nextAction && !nextAction!.actionType) {
-          myLoggerService.log(JSON.stringify(nextAction));
-          if (nextAction!.actionType === "NewTransaction") {
-            this.startNewTransaction(nextAction!.transactionName!);
-          }
-        } else {
-          myLoggerService.log("invalid action");
+        if (this.currentAction.actionType === "Cancel") {
+          this.cancelHandler();
+        } else if (this.currentAction.actionType === "ContinueTransaction") {
+          await speak(this.currentAction!.prompt!);
+        } else if (this.currentAction.actionType === "EndTransaction") {
+          chatStoreService.resetTransactionContext();
+          this.transactionProcessor = undefined;
+          this.sessionProcessor?.start();
         }
-        
-
-      }
-    } else if (this.currentStage === Stage.transaction) {
-      const txAction = await this.currentSessionProcessor!.process(user_text);
-      myLoggerService.log("txAction: " + JSON.stringify(txAction));
+        break;
+      case "EndTransaction":
+        chatStoreService.resetTransactionContext();
+        this.transactionProcessor = undefined;
+        this.sessionProcessor?.start();
+        break;
+      default:
+        myLoggerService.log("Invalid Action");
+        break;
     }
-  }
-
-  private startNewTransaction(tx: TransactionName) {
-    this.currentTransactionProcessor = createTransactionProcessor(tx);
-    this.currentTransactionProcessor!.chatbotWebUrl = this.atmConnectionOption!.webApiUrl!;
-    this.currentTransactionProcessor?.start();
   }
 }
 

@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { chatStoreService } from "../services/chat-store.service";
+import { myChatbotServiceAgent } from "../services/chatbot-service-agent";
 import { CashWithdrawalTxProcessor } from "../services/processors/cash-withdrawal-processor";
 import {
   IProcessor,
@@ -28,8 +30,6 @@ export function extractTranscribedData(messageData: any): any {
     console.log(error);
     return undefined;
   }
-
-  return messageData.responseMessage.data;
 }
 
 export function createTransactionProcessor(tx: TransactionName): IProcessor {
@@ -88,3 +88,31 @@ export function getGreetingWords() {
   return ret;
 }
 
+
+export async function speak(prompts: string[]) {
+  chatStoreService.clearAgentMessages();
+    let questionText = "";
+    prompts.map((q) => {
+      chatStoreService.addAgentMessage(q);
+      questionText += q + ".";
+    });
+
+    const ttsRes = await myChatbotServiceAgent?.generateaudio(
+      JSON.stringify({
+        action: "generateaudio",
+        sessionId: chatStoreService.sessionContext.sessionId,
+        text: questionText,
+        language: chatStoreService.language,
+      })
+    );
+
+    if (
+      ttsRes &&
+      ttsRes.responseMessage &&
+      ttsRes.responseMessage.file_name
+    ) {
+      chatStoreService.setAudioUrl(
+        `${ chatStoreService.chatbotUrl}/download/${ttsRes.responseMessage.file_name}`
+      );
+    }
+}

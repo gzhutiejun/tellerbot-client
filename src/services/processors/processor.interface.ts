@@ -1,15 +1,11 @@
-export type ChatbotActionType = "NewTransaction" | "Continue" | "Cancel" | "EndTransaction" | "Notification";
-export interface IPrompt {
-  messages?: string[];
-  language?: string;
-}
+export type ChatbotActionType = "Idle" | "NewSession" | "ContinueSession" | "Cancel" | "NewTransaction" | "ContinueTransaction" | "EndTransaction" | "Notification";
+
 export interface ChatbotAction {
-  actionType?: ChatbotActionType;
-  prompt?: IPrompt;
+  actionType: ChatbotActionType;
+  prompt?: string[];
   transactionName?: TransactionName;
 }
 export interface IProcessor {
-  chatbotWebUrl: string;
   start(): void;
   process(text: string): Promise<ChatbotAction>;
 }

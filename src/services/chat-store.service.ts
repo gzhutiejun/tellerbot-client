@@ -15,6 +15,7 @@ export class ChatStoreService {
   cancelHandler:any = null;
   notification: boolean = false;
   language: string = "en";
+  chatbotUrl: string = "";
   sessionContext: ISessionContext = {
     sessionId: "",
   }
