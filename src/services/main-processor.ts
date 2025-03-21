@@ -331,8 +331,8 @@ export class MainProcessor {
           myLoggerService.log("cancelled");
           return;
         }
-        if (sessionAction.actionType === "End") {
-          myLoggerService.log("end");
+        if (sessionAction.actionType === "EndTransaction") {
+          myLoggerService.log("EndTransaction");
           return;
         }
 

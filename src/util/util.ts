@@ -78,11 +78,11 @@ export function getGreetingWords() {
   const currentHour = new Date().getHours();
   let ret;
   if (currentHour >= 12 && currentHour <= 17) {
-    ret = "下午好";
+    ret = "Good afternoon";
   } else if (currentHour >= 17) {
-    ret = "晚上好";
+    ret = "Good evening";
   } else {
-    ret = "早晨好";
+    ret = "Good morning";
   }
 
   return ret;

@@ -18,4 +18,8 @@ export class CashWithdrawalTxProcessor implements IProcessor {
 
     return nextAction;
   }
+
+  private findNextStep() {
+    
+  }
 }
