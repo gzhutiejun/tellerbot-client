@@ -344,7 +344,7 @@ export class MainProcessor {
           await speak(this.currentAction!.prompt!);
         } else if (this.currentAction.actionType === "NewTransaction") {
           this.transactionProcessor = createTransactionProcessor(
-            this.currentAction.transactionName!
+            chatStoreService.sessionContext!.transactionContext!.currentTransaction! as TransactionName
           );
           this.currentAction = {
             actionType: "ContinueTransaction",

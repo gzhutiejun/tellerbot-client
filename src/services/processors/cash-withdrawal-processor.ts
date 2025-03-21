@@ -10,26 +10,38 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     amoount: 0,
     currency: "",
     account: "",
-  }
+  };
   constructor() {
     myLoggerService.log("create Cash Withdrawal Processor");
   }
   async start() {
     myLoggerService.log("CashWithdrawalTxProcessor: start");
-    this.findNextStep();
+    const nextAction: ChatbotAction = this.findNextStep();
+    if (nextAction.actionType === "ContinueTransaction") {
+      speak(nextAction.prompt!);
+    } else {
+      myLoggerService.log("Invalid action");
+    }
   }
   async process(text: string): Promise<ChatbotAction> {
     myLoggerService.log("CashWithdrawalTxProcessor: process: " + text);
-    
+
     const req = {
       text: text,
-      instruction:
-        "extract amount or number as amount, currency, and account.",
+      instruction: "extract amount or number as amount, currency, and account.",
       format: this.dataTemplate,
     };
 
     const res = await myChatbotServiceAgent.extract(JSON.stringify(req));
     myLoggerService.log(res);
+
+    if (!res || !res.success) {
+      this.findNextStep();
+      return {
+        actionType: "ContinueTransaction",
+        prompt: [],
+      };
+    }
 
     const nextAction: ChatbotAction = {
       actionType: "ContinueTransaction",
@@ -39,19 +51,55 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     return nextAction;
   }
 
-  private async findNextStep() {
+  private findNextStep(): ChatbotAction {
+    myLoggerService.log("findNextStep");
     // step 1
-    myLoggerService.log("sessionContext: " + JSON.stringify( chatStoreService.sessionContext));
+    myLoggerService.log(
+      "sessionContext: " + JSON.stringify(chatStoreService.sessionContext)
+    );
+    const nextAction: ChatbotAction = {
+      actionType: "ContinueTransaction",
+      prompt: [],
+    };
+
+    //step 1
     if (
       !chatStoreService.sessionContext!.transactionContext?.selectedAccount &&
       !chatStoreService.sessionContext!.transactionContext?.amount
     ) {
-      const prompts: string[] = [
-        "Please tell what currency, how much money you want to withdraw and from which account.",
+      nextAction.prompt = [
+        "Please tell which currency, how much money you want to withdraw and from which account.",
         "We can provide Hong Kong dollars and US dollars.",
       ];
-      speak(prompts);
-      return;
+      return nextAction;
     }
+
+    //step 2
+    if (!chatStoreService.sessionContext!.transactionContext?.selectedAccount) {
+      nextAction.prompt = [
+        "Which account do you want to withdrawal money from?",
+      ];
+      return nextAction;
+    }
+
+    //step 3
+    if (!chatStoreService.sessionContext!.transactionContext?.amount) {
+      nextAction.prompt = [
+        "Which currency and how much money you want to withdraw",
+      ];
+      return nextAction;
+    }
+
+    //step 4
+    if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
+      nextAction.prompt = ["Which currency do you want to withdraw"];
+      return nextAction;
+    }
+    //step 5
+    if (!chatStoreService.sessionContext!.transactionContext?.amount.value) {
+      nextAction.prompt = ["How much do you want to withdraw"];
+      return nextAction;
+    }
+    return nextAction;
   }
 }

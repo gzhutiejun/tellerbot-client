@@ -8,29 +8,7 @@ import {
   TransactionName,
 } from "../services/processors/processor.interface";
 
-export function extractTranscribedData(messageData: any): any {
-  if (
-    !messageData ||
-    typeof messageData !== "object" ||
-    !messageData.responseMessage ||
-    !messageData.responseMessage.success
-  ) {
-    return undefined;
-  }
-  if (
-    !messageData.responseMessage.data ||
-    messageData.responseMessage.data.length < 5 ||
-    messageData.responseMessage.data[0] !== "{"
-  ) {
-    return undefined;
-  }
-  try {
-    return JSON.parse(messageData.responseMessage.data);
-  } catch (error) {
-    console.log(error);
-    return undefined;
-  }
-}
+
 
 export function createTransactionProcessor(tx: TransactionName): IProcessor {
   let processor: IProcessor | undefined;
