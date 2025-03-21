@@ -27,7 +27,6 @@ export class MainProcessor {
   private chatbotConnectionOption?: ConnectionOptions;
   private audioContext?: AudioContext;
   private analyser?: AnalyserNode;
-  private language = "zh";
   private bufferLength: number = 0;
   private dataArray?: Float32Array;
   private silenceTimer: number = 0;
@@ -50,7 +49,6 @@ export class MainProcessor {
   async init(atmUrl: string, chatbotUrl: string) {
     myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
 
-    chatStoreService.setLanguage(this.language);
     this.atmConnectionOption = {
       webApiUrl: atmUrl,
     };

@@ -47,7 +47,7 @@ export class AtmServiceAgent {
       JSON.stringify({
         action: "open-session",
         parameters: {
-          language: "en",
+          language: "zh",
           cardNumber: "1234567890123456",
         },
       })
@@ -59,6 +59,7 @@ export class AtmServiceAgent {
     this.messageReceivedHandler = handler;
 
     if (chatStoreService.debugMode) {
+      chatStoreService.setLanguage("zh");
       chatStoreService.registerStartConversationHandler(
         this.openSessionHandler
       );

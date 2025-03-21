@@ -82,6 +82,7 @@ export class ChatStoreService {
   resetSessionContext() {
     this.customerMessage = "";
     this.agentMessages = [];
+    this.status = "";
     this.sessionContext = {
       sessionId: "",
       transactionContext: {}
@@ -90,6 +91,7 @@ export class ChatStoreService {
   resetTransactionContext() {
     this.customerMessage = "";
     this.agentMessages = [];
+    this.status = "";
     this.sessionContext.transactionContext = {}
   }
 }

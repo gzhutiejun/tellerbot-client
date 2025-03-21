@@ -29,7 +29,7 @@ export class SessionProcessor implements IProcessor {
     ) {
       chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
 
-      const helloMessage = `${getGreetingWords()}, 我是NCR智能柜员， 请问您需要什么服务`;
+      const helloMessage = `${getGreetingWords()}, 我是NCR智能语音助手小芳， 请问您需要办理什么业务？`;
       chatStoreService.clearAgentMessages();
       chatStoreService.addAgentMessage(helloMessage);
       const ttsRes = await myChatbotServiceAgent?.generateaudio(
@@ -83,7 +83,7 @@ export class SessionProcessor implements IProcessor {
     this.nextAction = {
       actionType: "Continue",
       prompt: {
-        messages: ["请问您需要什么服务?"],
+        messages: ["请问您需要办理什么业务?"],
       },
     };
 
