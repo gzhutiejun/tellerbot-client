@@ -24,7 +24,7 @@ export class ChatStoreService {
   audioUrl: string = "";
   conversationStarted: boolean = false;
   startConversationHandler: any = null;
-  audioPlayCompleteHandler: any = null;
+  startListeningHandler: any = null;
   cancelHandler: any = null;
   notification: boolean = false;
   language: string = "en";
@@ -51,7 +51,7 @@ export class ChatStoreService {
     if (this.audioUrl) {
       setTimeout(() => {
         console.log("ready to record media");
-        if (this.audioPlayCompleteHandler) this.audioPlayCompleteHandler();
+        if (this.startListeningHandler) this.startListeningHandler();
       }, 1000);
     }
   }
@@ -94,8 +94,8 @@ export class ChatStoreService {
     this.startConversationHandler = handler;
   }
 
-  registerAudioPlayCompleteHandler(handler: any) {
-    this.audioPlayCompleteHandler = handler;
+  registerStartListeningHandler(handler: any) {
+    this.startListeningHandler = handler;
   }
 
   registerCancelHandler(handler: any) {

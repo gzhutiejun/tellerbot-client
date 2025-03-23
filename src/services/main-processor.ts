@@ -34,7 +34,7 @@ export class MainProcessor {
   private silenceTimer: number = 0;
   private silenceStart?: number = undefined;
   private silenceThreshold = -35;
-  private silenceTimeout = 2000;
+  private silenceTimeout = 3000;
   private lastAudioPath = "";
   private maxListenTime = 20000;
   private listenTimer: number = 0;
@@ -77,7 +77,7 @@ export class MainProcessor {
     myATMServiceAgent.init(this.atmConnectionOption);
     chatStoreService.setDebugMode(this.debugMode);
 
-    chatStoreService.registerAudioPlayCompleteHandler(this.startListening);
+    chatStoreService.registerStartListeningHandler(this.startListening);
     chatStoreService.registerCancelHandler(this.cancelHandler);
 
     await myATMServiceAgent.connect();
@@ -172,7 +172,7 @@ export class MainProcessor {
             file_path: this.lastAudioPath,
           };
 
-          myLoggerService.log("transcribe");
+          myLoggerService.log("transcribe start");
           const transcribeResult = await myChatbotServiceAgent?.transcribe(
             JSON.stringify(data)
           );
@@ -184,6 +184,9 @@ export class MainProcessor {
             transcribeResult.responseMessage.transcript
           ) {
             this.processTranscript(transcribeResult.responseMessage.transcript);
+          } else {
+            myLoggerService.log("Invalid transcript, continue listen")
+            this.startListening();
           }
         } else {
           myLoggerService.log("upload file failed");
