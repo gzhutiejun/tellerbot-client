@@ -1,8 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { makeAutoObservable } from "mobx";
 import { ISessionContext } from "./model-interface";
-export type ChatbotActionType = "Idle" | "Repeat" | "NewSession" | "ContinueSession" | "Cancel" | "NewTransaction" | "ContinueTransaction" | "EndTransaction" | "Notification";
-
+export type ChatbotActionType =
+  | "Idle"
+  | "Repeat"
+  | "NewSession"
+  | "ContinueSession"
+  | "Cancel"
+  | "NewTransaction"
+  | "ContinueTransaction"
+  | "EndTransaction"
+  | "Notification";
+export enum ChatState {
+  interactive = 1,
+  notification = 2,
+}
 export class ChatStoreService {
   customerMessage: string = "";
   agentMessages: string[] = [];
@@ -13,13 +25,14 @@ export class ChatStoreService {
   conversationStarted: boolean = false;
   startConversationHandler: any = null;
   audioPlayCompleteHandler: any = null;
-  cancelHandler:any = null;
+  cancelHandler: any = null;
   notification: boolean = false;
   language: string = "en";
   chatbotUrl: string = "";
   sessionContext: ISessionContext = {
     sessionId: "",
-  }
+  };
+  chatState: ChatState = 1;
   constructor() {
     makeAutoObservable(this);
   }
@@ -34,9 +47,19 @@ export class ChatStoreService {
   }
   setAudioUrl(url: string) {
     this.audioUrl = url;
+
+    if (this.audioUrl) {
+      setTimeout(() => {
+        console.log("ready to record media");
+        if (this.audioPlayCompleteHandler) this.audioPlayCompleteHandler();
+      }, 1000);
+    }
   }
   setMic(mic: boolean) {
     this.mic = mic;
+  }
+  setChatState(state: ChatState) {
+    this.chatState = state;
   }
   setLanguage(lang: string) {
     this.language = lang;
@@ -65,10 +88,7 @@ export class ChatStoreService {
       this.cancelHandler();
     }
   }
-  setAudioPlayComplete() {
-    if (this.notification) return;
-    if (this.audioPlayCompleteHandler) this.audioPlayCompleteHandler();
-  }
+  setAudioPlayComplete() {}
 
   registerStartConversationHandler(handler: any) {
     this.startConversationHandler = handler;
@@ -78,7 +98,7 @@ export class ChatStoreService {
     this.audioPlayCompleteHandler = handler;
   }
 
-  registerCancelHandler(handler:any) {
+  registerCancelHandler(handler: any) {
     this.cancelHandler = handler;
   }
   resetSessionContext() {
@@ -87,17 +107,16 @@ export class ChatStoreService {
     this.status = "";
     this.sessionContext = {
       sessionId: "",
-      transactionContext: {}
-    }
+      transactionContext: {},
+    };
   }
   resetTransactionContext() {
     this.customerMessage = "";
     this.agentMessages = [];
     this.status = "";
-    this.sessionContext.transactionContext = {}
+    this.sessionContext.transactionContext = {};
   }
 }
 
 const chatStoreService = new ChatStoreService();
 export { chatStoreService };
-

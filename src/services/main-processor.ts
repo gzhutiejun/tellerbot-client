@@ -333,8 +333,6 @@ export class MainProcessor {
 
     switch (this.currentAction.actionType!) {
       case "Repeat":
-        replayAudio();
-        break;
       case "NewSession":
       case "ContinueSession":
         this.currentAction = await this.sessionProcessor!.process(user_text)!;

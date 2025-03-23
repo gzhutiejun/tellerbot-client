@@ -4,7 +4,6 @@ import { If } from "./if";
 
 export default function AudioPlayer() {                                       
   const handleEnded = () => {
-    console.log("handleComplete");
     chatStoreService.setAudioPlayComplete();
   };
   return (
