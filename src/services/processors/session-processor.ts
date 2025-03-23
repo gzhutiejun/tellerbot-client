@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getGreetingWords, speak } from "../../util/util";
-import { chatStoreService } from "../chat-store.service";
+import { getGreetingWords, playAudio } from "../../util/util";
+import { ChatbotActionType, chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
 import { myLoggerService } from "../logger.service";
 import {
   ChatbotAction,
-  ChatbotActionType,
   IProcessor,
   TransactionName,
 } from "./processor.interface";
@@ -33,7 +32,7 @@ export class SessionProcessor implements IProcessor {
       const prompts = [
         `${getGreetingWords()}, I am NCR Teller assistant, which service do you need?`,
       ];
-      speak(prompts);
+      playAudio(prompts);
     }
   }
 

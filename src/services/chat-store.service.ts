@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { makeAutoObservable } from "mobx";
 import { ISessionContext } from "./model-interface";
+export type ChatbotActionType = "Idle" | "Repeat" | "NewSession" | "ContinueSession" | "Cancel" | "NewTransaction" | "ContinueTransaction" | "EndTransaction" | "Notification";
 
 export class ChatStoreService {
   customerMessage: string = "";

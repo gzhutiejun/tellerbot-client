@@ -2,7 +2,6 @@ import Avatar from "./Avatar";
 import CustomerChatPanel from "./CustomerChatPanel";
 import Mic from "./Mic";
 import { Observer } from "mobx-react-lite";
-import ChatbotStatus from "./ChatbotStatus";
 import AudioPlayer from "./AudioPlayer";
 import StartChatButton from "./StartChatButton";
 import AgentChatPanel from "./AgentChatPanel";
@@ -27,7 +26,6 @@ function App() {
                 <AgentChatPanel></AgentChatPanel>
                 <CustomerChatPanel></CustomerChatPanel>
 
-                <ChatbotStatus></ChatbotStatus>
                 <Mic></Mic>
 
                 <div className="button-container">

@@ -1,5 +1,4 @@
-
-export type ChatbotActionType = "Idle" | "NewSession" | "ContinueSession" | "Cancel" | "NewTransaction" | "ContinueTransaction" | "EndTransaction" | "Notification";
+import { ChatbotActionType } from "../chat-store.service";
 
 export interface ChatbotAction {
   actionType: ChatbotActionType;

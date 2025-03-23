@@ -1,4 +1,4 @@
-import { speak } from "../../util/util";
+import { playAudio } from "../../util/util";
 import { chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
 import { myLoggerService } from "../logger.service";
@@ -7,7 +7,7 @@ import { ChatbotAction, IProcessor } from "./processor.interface";
 export class CashWithdrawalTxProcessor implements IProcessor {
   chatbotWebUrl: string = "";
   private dataTemplate = {
-    amoount: 0,
+    amount: 0,
     currency: "",
     account: "",
   };
@@ -18,7 +18,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     myLoggerService.log("CashWithdrawalTxProcessor: start");
     const nextAction: ChatbotAction = this.findNextStep();
     if (nextAction.actionType === "ContinueTransaction") {
-      speak(nextAction.prompt!);
+      playAudio(nextAction.prompt!);
     } else {
       myLoggerService.log("Invalid action");
     }

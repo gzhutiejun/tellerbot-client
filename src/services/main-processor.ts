@@ -1,17 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createTransactionProcessor, speak } from "../util/util";
+import { createTransactionProcessor, playAudio } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
-import { CashWithdrawalTxProcessor } from "./processors/cash-withdrawal-processor";
 import {
-  ChatbotAction,
-  ChatbotActionType,
-  IProcessor,
-  TransactionName,
+  ChatbotAction, IProcessor,
+  TransactionName
 } from "./processors/processor.interface";
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
@@ -341,7 +338,7 @@ export class MainProcessor {
         if (this.currentAction.actionType === "Cancel") {
           this.cancelHandler();
         } else if (this.currentAction.actionType === "ContinueSession") {
-          await speak(this.currentAction!.prompt!);
+          await playAudio(this.currentAction!.prompt!);
         } else if (this.currentAction.actionType === "NewTransaction") {
           this.transactionProcessor = createTransactionProcessor(
             chatStoreService.sessionContext!.transactionContext!.currentTransaction! as TransactionName
@@ -365,7 +362,7 @@ export class MainProcessor {
         if (this.currentAction.actionType === "Cancel") {
           this.cancelHandler();
         } else if (this.currentAction.actionType === "ContinueTransaction") {
-          await speak(this.currentAction!.prompt!);
+          await playAudio(this.currentAction!.prompt!);
         } else if (this.currentAction.actionType === "EndTransaction") {
           chatStoreService.resetTransactionContext();
           this.transactionProcessor = undefined;

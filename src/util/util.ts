@@ -67,7 +67,7 @@ export function getGreetingWords() {
 }
 
 
-export async function speak(prompts: string[]) {
+export async function playAudio(prompts: string[]) {
   chatStoreService.clearAgentMessages();
     let questionText = "";
     prompts.map((q) => {
