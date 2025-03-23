@@ -2,6 +2,7 @@
 
 import { chatStoreService } from "../services/chat-store.service";
 import { myChatbotServiceAgent } from "../services/chatbot-service-agent";
+import { myLoggerService } from "../services/logger.service";
 import { CashWithdrawalTxProcessor } from "../services/processors/cash-withdrawal-processor";
 import {
   IProcessor,
@@ -93,4 +94,13 @@ export async function playAudio(prompts: string[]) {
         `${ chatStoreService.chatbotUrl}/download/${ttsRes.responseMessage.file_name}`
       );
     }
+}
+
+export function replayAudio() {
+  myLoggerService.log("replayAudio");
+  const url = chatStoreService.audioUrl;
+  chatStoreService.setAudioUrl("");
+  setTimeout(() => {
+    chatStoreService.setAudioUrl(url);
+  },500);
 }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createTransactionProcessor, playAudio } from "../util/util";
+import { createTransactionProcessor, playAudio, replayAudio } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
@@ -252,14 +252,19 @@ export class MainProcessor {
   };
 
   private cancelHandler = () => {
-    myATMServiceAgent?.send({
-      action: "close-session",
-    });
-    myChatbotServiceAgent?.closesession(
-      JSON.stringify({
-        session_id: chatStoreService.sessionContext.sessionId,
-      })
-    );
+    try {
+      myATMServiceAgent?.send({
+        action: "close-session",
+      });
+      myChatbotServiceAgent?.closesession(
+        JSON.stringify({
+          session_id: chatStoreService.sessionContext.sessionId,
+        })
+      );
+    } catch (error) {
+      myLoggerService.log("error when close session");
+    }
+
     chatStoreService.resetSessionContext();
   };
   private atmMessageHandler = (message: string) => {
@@ -327,6 +332,9 @@ export class MainProcessor {
     );
 
     switch (this.currentAction.actionType!) {
+      case "Repeat":
+        replayAudio();
+        break;
       case "NewSession":
       case "ContinueSession":
         this.currentAction = await this.sessionProcessor!.process(user_text)!;
@@ -337,6 +345,8 @@ export class MainProcessor {
 
         if (this.currentAction.actionType === "Cancel") {
           this.cancelHandler();
+        } if (this.currentAction.actionType === "Repeat") {
+          replayAudio();
         } else if (this.currentAction.actionType === "ContinueSession") {
           await playAudio(this.currentAction!.prompt!);
         } else if (this.currentAction.actionType === "NewTransaction") {

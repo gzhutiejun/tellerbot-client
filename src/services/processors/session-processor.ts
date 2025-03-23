@@ -11,6 +11,9 @@ import {
 
 export class SessionProcessor implements IProcessor {
   private started = false;
+  private lastStep = 0;
+  private currentStep = 0;
+
   constructor() {
     myLoggerService.log("create Session Processor");
   }
@@ -51,47 +54,49 @@ export class SessionProcessor implements IProcessor {
     const res = await myChatbotServiceAgent.extract(JSON.stringify(req));
     myLoggerService.log(res);
 
-    this.extractData(res);
-    return await this.findNextAction();
-  }
-
-  private extractData(messageData: any) {
     if (
-      !messageData ||
-      typeof messageData !== "object" ||
-      !messageData.responseMessage ||
-      !messageData.responseMessage.success
+      res &&
+      res.responseMessage &&
+      res.responseMessage &&
+      res.responseMessage.data[0] === "{"
     ) {
-      return;
-    }
-    if (
-      !messageData.responseMessage.data ||
-      messageData.responseMessage.data.length < 5 ||
-      messageData.responseMessage.data[0] !== "{"
-    ) {
-      return;
-    }
-    try {
-      const data = JSON.parse(messageData.responseMessage.data);
+      const data = JSON.parse(res.responseMessage.data);
       myLoggerService.log("Transcribed data:" + JSON.stringify(data));
+      if (data.cancel) {
+        return {
+          actionType: "Cancel",
+        };
+      }
 
       chatStoreService.sessionContext!.transactionContext = {
         currentTransaction: this.identifyTransactionName(
           data
         ) as TransactionName,
       };
-    } catch (error) {
-      console.log(error);
     }
+
+    const action: ChatbotAction = this.findNextStep();
+    if (
+      action.actionType === "ContinueSession" &&
+      this.currentStep === this.lastStep
+    ) {
+      action.actionType = "Repeat";
+    }
+    this.lastStep = this.currentStep;
+
+    return action;
   }
 
-  private findNextAction(): ChatbotAction {
+  private findNextStep(): ChatbotAction {
     const action = {
       actionType: "ContinueSession" as ChatbotActionType,
       prompt: ["which service do you need?"],
     };
 
-    if (chatStoreService.sessionContext.transactionContext?.currentTransaction) {
+    this.currentStep = 1;
+    if (
+      chatStoreService.sessionContext.transactionContext?.currentTransaction
+    ) {
       if (!this.started) {
         action.actionType = "NewTransaction" as ChatbotActionType;
         this.started = true;
