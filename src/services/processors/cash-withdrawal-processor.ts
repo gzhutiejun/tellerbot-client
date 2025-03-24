@@ -31,10 +31,9 @@ export class CashWithdrawalTxProcessor implements IProcessor {
   }
   async process(text: string): Promise<ChatbotAction> {
     myLoggerService.log("CashWithdrawalTxProcessor: process: " + text);
-    console.log(chatStoreService.sessionContext!.transactionContext);
     const req = {
       text: text,
-      instruction: "extract amount or number as amount, currency, and account.",
+      instruction: "extract amount or number as amount, currency, and account like like 'saving', 'credit', 'cheque','check' or 'credit'",
       format: this.template,
     };
 
@@ -71,6 +70,8 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     }
 
     const action: ChatbotAction = this.findNextStep();
+    myLoggerService.log("nextAction: " + JSON.stringify(action));
+
     if (
       action.actionType === "ContinueTransaction" &&
       this.currentStep === this.lastStep
@@ -137,6 +138,8 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       nextAction.prompt = ["How much do you want to withdraw"];
       return nextAction;
     }
+
+  
     return nextAction;
   }
 }
