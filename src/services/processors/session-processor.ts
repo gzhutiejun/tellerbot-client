@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getGreetingWords, playAudio } from "../../util/util";
+import { ExtractResponse, SessionResponse } from "../bus-op.interface";
 import { ChatbotActionType, chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
 import { myLoggerService } from "../logger.service";
@@ -20,17 +21,14 @@ export class SessionProcessor implements IProcessor {
   async start() {
     myLoggerService.log("SessionProcessor: start");
 
-    const sessionRes = await myChatbotServiceAgent?.opensession(
-      JSON.stringify({
-        action: "opensession",
-      })
-    );
-    if (
-      sessionRes &&
-      sessionRes.responseMessage &&
-      sessionRes.responseMessage.session_id
-    ) {
-      chatStoreService.setSessionId(sessionRes.responseMessage.session_id);
+    const sessionRes: SessionResponse =
+      await myChatbotServiceAgent?.opensession(
+        JSON.stringify({
+          action: "opensession",
+        })
+      );
+    if (sessionRes && sessionRes.sessionId) {
+      chatStoreService.setSessionId(sessionRes.sessionId);
 
       const prompts = [
         `${getGreetingWords()}, I am NCR Teller assistant, which service do you need?`,
@@ -51,28 +49,28 @@ export class SessionProcessor implements IProcessor {
         cancel: false,
       },
     };
-    const res = await myChatbotServiceAgent.extract(JSON.stringify(req));
-    myLoggerService.log(res);
+    const res: ExtractResponse = await myChatbotServiceAgent.extract(
+      JSON.stringify(req)
+    );
 
-    if (
-      res &&
-      res.responseMessage &&
-      res.responseMessage &&
-      res.responseMessage.data[0] === "{"
-    ) {
-      const data = JSON.parse(res.responseMessage.data);
-      myLoggerService.log("Transcribed data:" + JSON.stringify(data));
-      if (data.cancel) {
-        return {
-          actionType: "Cancel",
+    try {
+      if (res && res.data && res.data.data) {
+        const txData = JSON.parse(res.data.data);
+        if (txData.cancel) {
+          return {
+            actionType: "Cancel",
+          };
+        }
+
+        chatStoreService.sessionContext!.transactionContext = {
+          currentTransaction: this.identifyTransactionName(
+            txData.transaction
+          ) as TransactionName,
         };
       }
-
-      chatStoreService.sessionContext!.transactionContext = {
-        currentTransaction: this.identifyTransactionName(
-          data
-        ) as TransactionName,
-      };
+    } catch (e) {
+      console.log("extract:",e);
+      return { actionType: "Cancel" };
     }
 
     const action: ChatbotAction = this.findNextStep();
@@ -104,10 +102,9 @@ export class SessionProcessor implements IProcessor {
     }
     return action;
   }
-  private identifyTransactionName(data: any): TransactionName {
-    if (!data.transaction) return undefined;
-    const val: string = data.transaction.toLowerCase();
-    if (!val) return undefined;
+  private identifyTransactionName(tx: string): TransactionName {
+    if (!tx) return undefined;
+    const val: string = tx.toLowerCase();
     if (val.includes("withdraw")) return "cash-withdrawal";
     if (val.includes("time") && val.includes("deposit")) return "time-deposit";
     return undefined;

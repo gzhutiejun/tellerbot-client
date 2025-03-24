@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { GenerateAudioResponse } from "../services/bus-op.interface";
 import { chatStoreService } from "../services/chat-store.service";
 import { myChatbotServiceAgent } from "../services/chatbot-service-agent";
 import { myLoggerService } from "../services/logger.service";
@@ -77,7 +78,7 @@ export async function playAudio(prompts: string[]) {
       questionText += q + ".";
     });
 
-    const ttsRes = await myChatbotServiceAgent?.generateaudio(
+    const ttsRes: GenerateAudioResponse = await myChatbotServiceAgent?.generateaudio(
       JSON.stringify({
         action: "generateaudio",
         sessionId: chatStoreService.sessionContext.sessionId,
@@ -88,11 +89,10 @@ export async function playAudio(prompts: string[]) {
 
     if (
       ttsRes &&
-      ttsRes.responseMessage &&
-      ttsRes.responseMessage.file_name
+      ttsRes.fileName
     ) {
       chatStoreService.setAudioUrl(
-        `${ chatStoreService.chatbotUrl}/download/${ttsRes.responseMessage.file_name}`
+        `${ chatStoreService.chatbotUrl}/download/${ttsRes.fileName}`
       );
     }
 }

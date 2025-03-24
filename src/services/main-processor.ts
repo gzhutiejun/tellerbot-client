@@ -3,6 +3,7 @@
 
 import { createTransactionProcessor, playAudio, replayAudio } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
+import { TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
@@ -157,14 +158,13 @@ export class MainProcessor {
         formData.append("file", audioBlob);
         chatStoreService.setStatus("Thinking...");
         myLoggerService.log("upload audio file");
-        const uploadResult = await myChatbotServiceAgent?.upload(formData);
+        const uploadResult: UpdateFileResponse = await myChatbotServiceAgent?.upload(formData);
 
         if (
           uploadResult &&
-          uploadResult.responseMessage &&
-          uploadResult.responseMessage.file_path
+          uploadResult.filePath
         ) {
-          this.lastAudioPath = uploadResult.responseMessage.file_path;
+          this.lastAudioPath = uploadResult.filePath;
           myLoggerService.log("uploaded file:" + this.lastAudioPath);
 
           const data = {
@@ -173,17 +173,16 @@ export class MainProcessor {
           };
 
           myLoggerService.log("transcribe start");
-          const transcribeResult = await myChatbotServiceAgent?.transcribe(
+          const transcribeResult: TranscribeResponse = await myChatbotServiceAgent?.transcribe(
             JSON.stringify(data)
           );
           chatStoreService.setStatus("");
           myLoggerService.log("transcribe complete");
           if (
             transcribeResult &&
-            transcribeResult.responseMessage &&
-            transcribeResult.responseMessage.transcript
+            transcribeResult.transcript
           ) {
-            this.processTranscript(transcribeResult.responseMessage.transcript);
+            this.processTranscript(transcribeResult.transcript);
           } else {
             myLoggerService.log("Invalid transcript, continue listen")
             this.startListening();

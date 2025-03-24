@@ -1,4 +1,5 @@
 import { playAudio } from "../../util/util";
+import { ExtractResponse } from "../bus-op.interface";
 import { chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
 import { myLoggerService } from "../logger.service";
@@ -32,7 +33,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       format: this.dataTemplate,
     };
 
-    const res = await myChatbotServiceAgent.extract(JSON.stringify(req));
+    const res: ExtractResponse = await myChatbotServiceAgent.extract(JSON.stringify(req));
     myLoggerService.log(res);
 
     if (!res || !res.success) {

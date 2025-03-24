@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BusOpResponse } from "./bus-op.interface";
+import { BusOpResponse, ExtractResponse, GenerateAudioResponse, SessionResponse, TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { myLoggerService } from "./logger.service";
 import { ConnectionOptions } from "./websocket";
 
@@ -29,25 +29,99 @@ export class ChatbotServiceAgent {
     }
   }
 
-  async opensession(data: string): Promise<any> {
-    const res = await this.postRequest("opensession", data);
-    return res;
+  async opensession(data: string): Promise<SessionResponse> {
+    const retVal: SessionResponse = {
+      success: false,
+    };
+
+    try {
+      const res = await fetch(`${this.opt?.webApiUrl}/opensession`, this.createPostReequest(data));
+      if (res.ok) {
+        const sessionData = await res.json();
+        console.log("opensession", sessionData);
+        retVal.sessionId = sessionData.session_id;
+        retVal.success = true;
+      }
+    } catch (e: any) {
+      myLoggerService.log(e);
+    }
+
+    return retVal;
   }
-  async closesession(data: string): Promise<any> {
-    const res = await this.postRequest("closesession", data);
-    return res;
+  async closesession(data: string): Promise<SessionResponse> {
+    const retVal: SessionResponse = {
+      success: false,
+    };
+
+    try {
+      const res = await fetch(`${this.opt?.webApiUrl}/closesession`, this.createPostReequest(data));
+      if (res.ok) {
+        const sessionData = await res.json();
+        console.log("closesession", sessionData);
+        retVal.sessionId = sessionData.session_id;
+        retVal.success = true;
+      }
+    } catch (e: any) {
+      myLoggerService.log(e);
+    }
+
+    return retVal;
   }
-  async generateaudio(data: string): Promise<any> {
-    const res = await this.postRequest("generateaudio", data);
-    return res;
+  async generateaudio(data: string): Promise<GenerateAudioResponse> {
+    const retVal: GenerateAudioResponse = {
+      success: false,
+    };
+
+    try {
+      const res = await fetch(`${this.opt?.webApiUrl}/generateaudio`, this.createPostReequest(data));
+      if (res.ok) {
+        const data = await res.json();
+        console.log("transcribe", data);
+        retVal.fileName = data.file_name;
+        retVal.success = true;
+      }
+    } catch (e: any) {
+      myLoggerService.log(e);
+    }
+
+    return retVal;
   }
-  async transcribe(data: string): Promise<any> {
-    const res = await this.postRequest("transcribe", data);
-    return res;
+  async transcribe(data: string): Promise<TranscribeResponse> {
+    const retVal: TranscribeResponse = {
+      success: false,
+    };
+
+    try {
+      const res = await fetch(`${this.opt?.webApiUrl}/transcribe`, this.createPostReequest(data));
+      if (res.ok) {
+        const data = await res.json();
+        console.log("transcribe", data);
+        retVal.transcript = data.transcript;
+        retVal.success = true;
+      }
+    } catch (e: any) {
+      myLoggerService.log(e);
+    }
+
+    return retVal;
   }
-  async extract(data: string): Promise<any> {
-    const res = await this.postRequest("extract", data);
-    return res;
+  async extract(data: string): Promise<ExtractResponse> {
+    const retVal: ExtractResponse = {
+      success: false,
+    };
+
+    try {
+      const res = await fetch(`${this.opt?.webApiUrl}/extract`, this.createPostReequest(data));
+      if (res.ok) {
+        const result = await res.json();
+        retVal.data  = result;
+        retVal.success = true;
+      }
+    } catch (e: any) {
+      myLoggerService.log(e);
+    }
+
+    return retVal;
   }
 
   async download(file_path: string): Promise<any> {
@@ -61,8 +135,8 @@ export class ChatbotServiceAgent {
       myLoggerService.log(`download complete`);
       if (res.ok) {
         retVal.success = true;
-        retVal.responseMessage = await res.json();
-        // myLoggerService.log(retVal);
+        const filePath = await res.json();
+        console.log(filePath);
       }
     } catch (e: any) {
       myLoggerService.log(e);
@@ -71,7 +145,7 @@ export class ChatbotServiceAgent {
     return;
   }
   async upload(data: FormData): Promise<any> {
-    const retVal: BusOpResponse = {
+    const retVal: UpdateFileResponse = {
       success: false,
     };
     try {
@@ -82,8 +156,9 @@ export class ChatbotServiceAgent {
       const res = await fetch(`${this.opt?.webApiUrl}/upload`, req);
       if (res.ok) {
         retVal.success = true;
-        retVal.responseMessage = await res.json();
-        // myLoggerService.log(retVal);
+        const fileInfo = await res.json();
+        retVal.filePath = fileInfo.file_path;
+        console.log(retVal);
       }
     } catch (e: any) {
       myLoggerService.log(e);
@@ -91,31 +166,17 @@ export class ChatbotServiceAgent {
 
     return retVal;
   }
-  private async postRequest(method: string, data: string): Promise<any> {
-    const retVal: BusOpResponse = {
-      success: false,
+
+  private createPostReequest(data: string): any {
+    const req = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: data,
     };
-
-    try {
-      const req = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: data,
-      };
-      const res = await fetch(`${this.opt?.webApiUrl}/${method}`, req);
-      if (res.ok) {
-        retVal.success = true;
-        retVal.responseMessage = await res.json();
-        // myLoggerService.log(retVal);
-      }
-    } catch (e: any) {
-      myLoggerService.log(e);
-    }
-
-    return retVal;
+    return req;
   }
 }
 
