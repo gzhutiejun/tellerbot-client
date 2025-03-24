@@ -99,9 +99,39 @@ export async function playAudio(prompts: string[]) {
 
 export function replayAudio() {
   myLoggerService.log("replayAudio");
+
+  chatStoreService.increaseRepeatCount();
+  if (chatStoreService.repeatCount <=3 ) {
+    if (chatStoreService.startListeningHandler) chatStoreService.startListeningHandler();
+    return;
+  }
+  chatStoreService.resetRepeatCount();
   const url = chatStoreService.audioUrl;
   chatStoreService.setAudioUrl("");
   setTimeout(() => {
     chatStoreService.setAudioUrl(url);
   },500);
+}
+
+
+export function extractAccount(account: string): string {
+  if (!account) return "";
+  const acc = account.toLowerCase();
+  if (acc.includes("credit")) return "credit";
+  if (acc.includes("debit")) return "debit";
+  if (acc.includes("saving")) return "saving";
+  if (acc.includes("cheque") ||  acc.includes("check")) return "cheque";
+  if (acc.includes("default")) return "default";
+  return ""
+}
+
+
+export function extractCurrency(currency: string): string {
+  if (!currency) return "";
+  const curr = currency.toLowerCase();
+  if (curr.includes("hkd") || curr.includes("hong kong")) return "HKD";
+  if (curr.includes("usd") || curr.includes("us dollar")) return "USD";
+  if (curr.includes("twd") ||  curr.includes("tai wan")) return "TWD";
+  if (curr.includes("eur") || curr.includes("europe")) return "EUR";
+  return ""
 }

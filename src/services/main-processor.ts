@@ -320,6 +320,7 @@ export class MainProcessor {
   }
   private startListening = () => {
     myLoggerService.log("startListening");
+    chatStoreService.setCustomerMessage("");
     this.startRecording();
   };
 

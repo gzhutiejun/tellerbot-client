@@ -12,15 +12,20 @@ import {
 
 export class SessionProcessor implements IProcessor {
   private started = false;
-  private lastStep = 0;
-  private currentStep = 0;
+  private lastStep = -1;
+  private currentStep = -1;
+  private template = {
+    transaction: "",
+    cancel: false,
+  };
 
   constructor() {
     myLoggerService.log("create Session Processor");
   }
   async start() {
     myLoggerService.log("SessionProcessor: start");
-
+    this.lastStep = -1;
+    this.currentStep = -1;
     const sessionRes: SessionResponse =
       await myChatbotServiceAgent?.opensession(
         JSON.stringify({
@@ -44,10 +49,7 @@ export class SessionProcessor implements IProcessor {
       text: text,
       instruction:
         "We support transactions: cash deposit, cash withdrawal, transfer, please extract the transaction is requested.",
-      format: {
-        transaction: "",
-        cancel: false,
-      },
+      format: this.template,
     };
     const res: ExtractResponse = await myChatbotServiceAgent.extract(
       JSON.stringify(req)
@@ -69,8 +71,8 @@ export class SessionProcessor implements IProcessor {
         };
       }
     } catch (e) {
-      console.log("extract:",e);
-      return { actionType: "Cancel" };
+      console.log("extract:", e);
+      return { actionType: "Repeat" };
     }
 
     const action: ChatbotAction = this.findNextStep();

@@ -1,13 +1,14 @@
 export default {
   translation: {
     en: "English",
-    "cash withdrawal": "cash withdrawal",
-    "withdrawal": "withdrawal",
-    "deposit": "deposit",
-    "time deposit": "time deposit",
+    "cash withdrawal": "Cash withdrawal",
+    "withdrawal": "Withdrawal",
+    "deposit": "Deposit",
+    "time deposit": "Time deposit",
     "greeting": "Hi {{ name }}",
-    "good morning": "good morning",
-    "good afternoon": "good afternoon",
-    "good evening": "good evening",
+    "good morning": "Good morning",
+    "good afternoon": "Good afternoon",
+    "good evening": "Good evening",
+    "Please wait": "Please wait",
   },
 };

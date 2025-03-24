@@ -11,10 +11,8 @@ export type ChatbotActionType =
   | "ContinueTransaction"
   | "EndTransaction"
   | "Notification";
-export enum ChatState {
-  interactive = 1,
-  notification = 2,
-}
+export type ChatState = "Interactive" | "notification";
+
 export class ChatStoreService {
   customerMessage: string = "";
   agentMessages: string[] = [];
@@ -32,7 +30,8 @@ export class ChatStoreService {
   sessionContext: ISessionContext = {
     sessionId: "",
   };
-  chatState: ChatState = 1;
+  chatState: ChatState = "Interactive";
+  repeatCount = 0;
   constructor() {
     makeAutoObservable(this);
   }
@@ -64,7 +63,12 @@ export class ChatStoreService {
   setLanguage(lang: string) {
     this.language = lang;
   }
-
+  increaseRepeatCount() {
+    this.repeatCount++;
+  }
+  resetRepeatCount() {
+    this.repeatCount = 0;
+  }
   setNotification(status: boolean) {
     this.notification = status;
   }
