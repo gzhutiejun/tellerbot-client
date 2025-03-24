@@ -217,6 +217,7 @@ export class MainProcessor {
   }
 
   private startSilenceDetection() {
+    myLoggerService.log("startSilenceDetection");
     this.bufferLength = this.analyser!.frequencyBinCount;
     this.dataArray = new Float32Array(this.bufferLength);
     this.silenceStart = undefined;

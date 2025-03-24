@@ -76,7 +76,6 @@ export class ChatbotServiceAgent {
       const res = await fetch(`${this.opt?.webApiUrl}/generateaudio`, this.createPostReequest(data));
       if (res.ok) {
         const data = await res.json();
-        console.log("transcribe", data);
         retVal.fileName = data.file_name;
         retVal.success = true;
       }
@@ -95,7 +94,6 @@ export class ChatbotServiceAgent {
       const res = await fetch(`${this.opt?.webApiUrl}/transcribe`, this.createPostReequest(data));
       if (res.ok) {
         const data = await res.json();
-        console.log("transcribe", data);
         retVal.transcript = data.transcript;
         retVal.success = true;
       }
