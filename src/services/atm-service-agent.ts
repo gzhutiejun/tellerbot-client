@@ -121,7 +121,7 @@ export class AtmServiceAgent {
             JSON.stringify({
               action: "event",
               parameters: {
-                actionCode: "41",
+                actionCode: "00",
                 vg: "please take money",
               },
             })

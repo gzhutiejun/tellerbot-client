@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { makeAutoObservable } from "mobx";
 import { ISessionContext } from "./model-interface";
+import { myLoggerService } from "./logger.service";
 export type ChatbotActionType =
   | "Idle"
   | "None"
@@ -17,6 +18,7 @@ export type ChatState = "Interaction" | "Notification";
 
 export class ChatStoreService {
   listenEarly = false;
+  playing: boolean = false;
   customerMessage: string = "";
   agentMessages: string[] = [];
   mic: boolean = false;
@@ -28,6 +30,7 @@ export class ChatStoreService {
   startListeningHandler: any = null;
   cancelHandler: any = null;
   notification: boolean = false;
+  playAudioOnly: boolean = false;
   language: string = "en";
   chatbotUrl: string = "";
   sessionContext: ISessionContext = {
@@ -37,6 +40,9 @@ export class ChatStoreService {
   repeatCount = 0;
   constructor() {
     makeAutoObservable(this);
+  }
+  setPlayAudioOnly(playModeOnly: boolean) {
+    this.playAudioOnly = playModeOnly;
   }
   setCustomerMessage(message: string) {
     this.customerMessage = message;
@@ -48,13 +54,14 @@ export class ChatStoreService {
     this.agentMessages = [];
   }
   setAudioUrl(url: string) {
+    myLoggerService.log("setAudioUrl: " + url);
     this.audioUrl = url;
 
-    if (this.audioUrl) {
+    if (this.audioUrl && !this.playAudioOnly) {
       setTimeout(() => {
         console.log("ready to record media");
         if (this.listenEarly && this.startListeningHandler) this.startListeningHandler();
-      }, 1000);
+      }, 100);
     }
   }
   setMic(mic: boolean) {
@@ -74,6 +81,9 @@ export class ChatStoreService {
   }
   setNotification(status: boolean) {
     this.notification = status;
+  }
+  setPlaying() {
+    this.playing = true;
   }
   setStatus(status: string) {
     this.status = status;
@@ -96,6 +106,7 @@ export class ChatStoreService {
     }
   }
   setAudioPlayComplete() {
+    this.playing = false;
     if (!this.listenEarly) this.startListeningHandler();
   }
 

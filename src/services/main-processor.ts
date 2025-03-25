@@ -1,11 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-  createTransactionProcessor,
-  playAudio,
-  replayAudio,
-} from "../util/util";
+import { createTransactionProcessor, playAudio } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { chatStoreService } from "./chat-store.service";
@@ -19,11 +15,6 @@ import {
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
 
-export enum Stage {
-  idle = 1,
-  session = 2,
-  transaction = 3,
-}
 export class MainProcessor {
   private mediaStream?: MediaStream;
   private mediaRecorder?: MediaRecorder;
@@ -46,7 +37,7 @@ export class MainProcessor {
   private listenTimer: number = 0;
 
   currentAction: ChatbotAction = {
-    actionType: "Idle",
+    actionType: "None",
   };
   sessionProcessor?: IProcessor;
   transactionProcessor?: IProcessor;
@@ -185,7 +176,10 @@ export class MainProcessor {
           if (transcribeResult && transcribeResult.transcript) {
             this.process(transcribeResult.transcript);
           } else {
-            replayAudio();
+            if (!this.currentAction.playAudioOnly) {
+              console.log("invalid text, listen again");
+              this.startListening();
+            }
           }
         } else {
           myLoggerService.log("upload file failed");
@@ -270,6 +264,7 @@ export class MainProcessor {
 
     chatStoreService.resetSessionContext();
   };
+
   private atmMessageHandler = (message: string) => {
     myLoggerService.log("message received from ATM: " + message);
     const atmMessage = JSON.parse(message);
@@ -307,6 +302,14 @@ export class MainProcessor {
     this.transactionProcessor = undefined;
   }
 
+  private anotherTransacton() {
+    this.currentAction = {
+      actionType: "None",
+    };
+    this.transactionProcessor = undefined;
+    this.sessionProcessor?.start();
+  }
+
   private async startSession() {
     myLoggerService.log("startSession");
     this.clearSessionData();
@@ -318,6 +321,11 @@ export class MainProcessor {
     this.sessionProcessor.start();
   }
   private startListening = () => {
+
+    if (this.currentAction.actionType === "EndTransaction") {
+      this.anotherTransacton();
+      return;
+    }
     if (chatStoreService.chatState === "Notification") return;
     myLoggerService.log("startListening");
     chatStoreService.setCustomerMessage("");
@@ -348,10 +356,9 @@ export class MainProcessor {
       "processTranscript currentAction1:" + JSON.stringify(this.currentAction)
     );
 
-    if (this.currentAction.playAudioOnly) {
-      this.currentAction.playAudioOnly = false;
-      playAudio(this.currentAction.prompt!);
-    }
+    chatStoreService.setPlayAudioOnly(
+      this.currentAction.playAudioOnly || false
+    );
 
     switch (this.currentAction.actionType!) {
       case "None":
@@ -368,9 +375,7 @@ export class MainProcessor {
         if (this.currentAction.actionType === "Cancel") {
           this.cancelHandler();
         }
-        if (this.currentAction.actionType === "Repeat") {
-          replayAudio();
-        } else if (this.currentAction.actionType === "ContinueSession") {
+        if (this.currentAction.actionType === "ContinueSession") {
           await playAudio(this.currentAction!.prompt!);
         } else if (this.currentAction.actionType === "NewTransaction") {
           this.transactionProcessor = createTransactionProcessor(
@@ -394,38 +399,41 @@ export class MainProcessor {
           "process currentAction3:" + JSON.stringify(this.currentAction)
         );
 
-        if (this.currentAction.playAudioOnly) {
-          this.currentAction.playAudioOnly = false;
-          playAudio(this.currentAction.prompt!);
-        }
+        // playAudio(this.currentAction.prompt!, this.currentAction.playAudioOnly);
+
         if (this.currentAction.actionType === "Cancel") {
           this.cancelHandler();
         } else if (this.currentAction.actionType === "AtmInteraction") {
           chatStoreService.setChatState("Notification");
-          playAudio(this.currentAction!.prompt!);
+          if (!chatStoreService.playing) {
+            playAudio(
+              this.currentAction!.prompt!,
+              this.currentAction.playAudioOnly
+            );
+          }
+
           myATMServiceAgent.send(this.currentAction.interactionMessage);
         } else if (this.currentAction.actionType === "ContinueTransaction") {
-          playAudio(this.currentAction!.prompt!);
+          playAudio(
+            this.currentAction!.prompt!,
+            this.currentAction.playAudioOnly
+          );
         } else if (this.currentAction.actionType === "EndTransaction") {
-          playAudio(this.currentAction!.prompt!);
-          chatStoreService.resetTransactionContext();
-          this.transactionProcessor = undefined;
-          setTimeout(() => {
-            this.sessionProcessor?.start();
-          }, 2000);
-
+          playAudio(
+            this.currentAction!.prompt!,
+            this.currentAction.playAudioOnly
+          );
         }
         break;
       case "EndTransaction":
-        chatStoreService.resetTransactionContext();
-        this.transactionProcessor = undefined;
-        setTimeout(() => {
-          this.sessionProcessor?.start();
-        }, 2000);
+        playAudio(
+          this.currentAction!.prompt!,
+          this.currentAction.playAudioOnly
+        );
         break;
       case "AtmInteraction":
         chatStoreService.setChatState("Notification");
-        playAudio(this.currentAction!.prompt!);
+        if (!chatStoreService.playing) playAudio(this.currentAction!.prompt!);
         myATMServiceAgent.send(this.currentAction.interactionMessage);
         break;
       default:

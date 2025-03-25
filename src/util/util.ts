@@ -66,9 +66,10 @@ export function getGreetingWords() {
   return ret;
 }
 
-export async function playAudio(prompts: string[]) {
+export async function playAudio(prompts: string[], playMode: boolean = false) {
   myLoggerService.log("playAudio");
   chatStoreService.clearAgentMessages();
+  chatStoreService.setPlayAudioOnly(playMode);
   let questionText = "";
   prompts.map((q) => {
     chatStoreService.addAgentMessage(q);
@@ -123,9 +124,9 @@ export function extractAccount(account: string): string {
 export function extractCurrency(currency: string): string {
   if (!currency) return "";
   const curr = currency.toLowerCase();
-  if (curr.includes("hkd") || curr.includes("hong kong")) return "HKD";
-  if (curr.includes("usd") || curr.includes("us dollar")) return "USD";
-  if (curr.includes("twd") || curr.includes("tai wan")) return "TWD";
+  if (curr.includes("hk") || curr.includes("hong kong")) return "HKD";
+  if (curr.includes("us")) return "USD";
+  if (curr.includes("tw") || curr.includes("tai wan") || curr.includes("taiwan")) return "TWD";
   if (curr.includes("eur") || curr.includes("europe")) return "EUR";
   return "";
 }
