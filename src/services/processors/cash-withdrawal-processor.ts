@@ -1,4 +1,10 @@
-import { extractAccount, extractCurrency, playAudio } from "../../util/util";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  extractAccount,
+  extractCancel,
+  extractCurrency,
+  playAudio,
+} from "../../util/util";
 import { ExtractResponse } from "../bus-op.interface";
 import { chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
@@ -12,10 +18,11 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     currency: "",
     amount: 0,
     cancel: false,
+    account: "",
   };
 
   constructor() {
-    myLoggerService.log("create Cash Withdrawal Processor");
+    myLoggerService.log("create CashWithdrawalTxProcessor");
   }
   async start() {
     myLoggerService.log("CashWithdrawalTxProcessor: start");
@@ -29,11 +36,49 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       myLoggerService.log("Invalid action");
     }
   }
-  async process(text: string): Promise<ChatbotAction> {
-    myLoggerService.log("CashWithdrawalTxProcessor: process: " + text);
+
+  async processAtmMessage(message: any): Promise<ChatbotAction> {
+    myLoggerService.log(
+      "CashWithdrawalTxProcessor: processAtmMessage" + JSON.stringify(message)
+    );
+
+    let nextAction: ChatbotAction = {
+      actionType: "None",
+    };
+    switch (message.event) {
+      case "note-mix":
+        chatStoreService.sessionContext!.transactionContext!.noteMixPerformed =
+          message.parameters.success;
+        nextAction = this.findNextStep();
+        break;
+      case "notification":
+        nextAction = {
+          actionType: "ContinueSession",
+          prompt: [message.parameters.vg],
+          playAudioOnly: true,
+        };
+        break;
+    }
+
+    switch (message.action) {
+      case "end-transaction":
+        nextAction = {
+          actionType: "EndTransaction",
+          prompt: [message.parameters.vg],
+          playAudioOnly: true
+        };
+        break;
+    }
+
+    return nextAction;
+  }
+
+  async processText(text: string): Promise<ChatbotAction> {
+    myLoggerService.log("CashWithdrawalTxProcessor: processText: " + text);
     const req = {
       text: text,
-      instruction: "extract amount or number as amount, currency, and account like like 'saving', 'credit', 'cheque','check' or 'credit'",
+      instruction:
+        "extract amount or number as amount, currency, and account like like 'saving', 'credit', 'cheque','check' or 'credit'",
       format: this.template,
     };
 
@@ -45,7 +90,8 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     try {
       if (res && res.data && res.data.data) {
         const txData = JSON.parse(res.data.data);
-        if (txData.cancel) {
+        console.log("txData", txData);
+        if (extractCancel(txData.cancel)) {
           return {
             actionType: "Cancel",
           };
@@ -63,20 +109,29 @@ export class CashWithdrawalTxProcessor implements IProcessor {
         if (txData.account)
           chatStoreService.sessionContext!.transactionContext!.selectedAccount =
             extractAccount(txData.account);
+
+        myLoggerService.log(
+          "transactionContext: " +
+            JSON.stringify(chatStoreService.sessionContext!.transactionContext!)
+        );
       }
     } catch (e) {
-      console.log("extract:", e);
-      return { actionType: "Repeat" };
+      console.log("extract error:", e);
     }
 
     const action: ChatbotAction = this.findNextStep();
-    myLoggerService.log("nextAction: " + JSON.stringify(action));
+    myLoggerService.log(
+      "nextAction: " +
+        JSON.stringify(action) +
+        " currentStep:" +
+        this.currentStep
+    );
 
     if (
       action.actionType === "ContinueTransaction" &&
       this.currentStep === this.lastStep
     ) {
-      action.actionType = "Repeat";
+      action.playAudioOnly = true;
     }
     this.lastStep = this.currentStep;
 
@@ -84,11 +139,8 @@ export class CashWithdrawalTxProcessor implements IProcessor {
   }
 
   private findNextStep(): ChatbotAction {
-    myLoggerService.log("findNextStep");
-    // step 1
-    myLoggerService.log(
-      "sessionContext: " + JSON.stringify(chatStoreService.sessionContext)
-    );
+    myLoggerService.log("findNextStep: currentStep: " + this.currentStep);
+
     const nextAction: ChatbotAction = {
       actionType: "ContinueTransaction",
       prompt: [],
@@ -96,19 +148,6 @@ export class CashWithdrawalTxProcessor implements IProcessor {
 
     //step 1
     this.currentStep = 1;
-    if (
-      !chatStoreService.sessionContext!.transactionContext?.selectedAccount &&
-      !chatStoreService.sessionContext!.transactionContext?.amount
-    ) {
-      nextAction.prompt = [
-        "Please tell which currency, how much money you want to withdraw and from which account.",
-        "We can provide Hong Kong dollars and US dollars.",
-      ];
-      return nextAction;
-    }
-
-    //step 2
-    this.currentStep = 2;
     if (!chatStoreService.sessionContext!.transactionContext?.selectedAccount) {
       nextAction.prompt = [
         "Which account do you want to withdrawal money from?",
@@ -118,9 +157,13 @@ export class CashWithdrawalTxProcessor implements IProcessor {
 
     //step 3
     this.currentStep = 3;
-    if (!chatStoreService.sessionContext!.transactionContext?.amount) {
+    if (
+      !chatStoreService.sessionContext!.transactionContext?.amount ||
+      !chatStoreService.sessionContext!.transactionContext?.amount.currency ||
+      !chatStoreService.sessionContext!.transactionContext?.amount.value
+    ) {
       nextAction.prompt = [
-        "Which currency and how much money you want to withdraw",
+        "Which currency and how much money you want to withdraw?",
       ];
       return nextAction;
     }
@@ -128,18 +171,56 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     //step 4
     this.currentStep = 4;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
-      nextAction.prompt = ["Which currency do you want to withdraw"];
+      nextAction.prompt = ["Which currency do you want to withdraw?"];
       return nextAction;
     }
 
     //step 5
     this.currentStep = 5;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.value) {
-      nextAction.prompt = ["How much do you want to withdraw"];
+      nextAction.prompt = ["How much money do you want to withdraw?"];
       return nextAction;
     }
 
-  
+    //step 6
+    this.currentStep = 6;
+    if (!chatStoreService.sessionContext!.transactionContext.noteMixPerformed) {
+      nextAction.actionType = "AtmInteraction";
+      nextAction.prompt = ["Please wait"];
+      nextAction.interactionMessage = {
+        action: "note-mix",
+        parameters: {
+          currency:
+            chatStoreService.sessionContext.transactionContext!.amount!
+              .currency,
+          amount:
+            chatStoreService.sessionContext.transactionContext!.amount!.value,
+        },
+      };
+      return nextAction;
+    }
+
+    //step 7
+    this.currentStep = 7;
+    if (!chatStoreService.sessionContext!.transactionContext.executeCompleted) {
+      nextAction.actionType = "AtmInteraction";
+      nextAction.prompt = ["Please wait"];
+      nextAction.interactionMessage = {
+        action: "cash-withdrawal",
+        parameters: {
+          currency:
+            chatStoreService.sessionContext.transactionContext!.amount!
+              .currency,
+          amount:
+            chatStoreService.sessionContext.transactionContext!.amount!.value,
+          accountType:
+            chatStoreService.sessionContext!.transactionContext.selectedAccount,
+          receiptRequested: true,
+        },
+      };
+      return nextAction;
+    }
+
     return nextAction;
   }
 }

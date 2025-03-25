@@ -131,6 +131,10 @@ export class AtmServiceAgent {
           this.messageReceivedHandler(
             JSON.stringify({
               action: "end-transaction",
+              parameters: {
+                actionCode: "00",
+                vg: "Your transaction has been processed successfully.",
+              },
             })
           );
         }, 6000);

@@ -3,6 +3,7 @@ import { makeAutoObservable } from "mobx";
 import { ISessionContext } from "./model-interface";
 export type ChatbotActionType =
   | "Idle"
+  | "None"
   | "Repeat"
   | "NewSession"
   | "ContinueSession"
@@ -10,10 +11,12 @@ export type ChatbotActionType =
   | "NewTransaction"
   | "ContinueTransaction"
   | "EndTransaction"
-  | "Notification";
-export type ChatState = "Interactive" | "notification";
+  | "Notification"
+  | "AtmInteraction";
+export type ChatState = "Interaction" | "Notification";
 
 export class ChatStoreService {
+  listenEarly = false;
   customerMessage: string = "";
   agentMessages: string[] = [];
   mic: boolean = false;
@@ -30,7 +33,7 @@ export class ChatStoreService {
   sessionContext: ISessionContext = {
     sessionId: "",
   };
-  chatState: ChatState = "Interactive";
+  chatState: ChatState = "Interaction";
   repeatCount = 0;
   constructor() {
     makeAutoObservable(this);
@@ -50,7 +53,7 @@ export class ChatStoreService {
     if (this.audioUrl) {
       setTimeout(() => {
         console.log("ready to record media");
-        if (this.startListeningHandler) this.startListeningHandler();
+        if (this.listenEarly && this.startListeningHandler) this.startListeningHandler();
       }, 1000);
     }
   }
@@ -92,7 +95,9 @@ export class ChatStoreService {
       this.cancelHandler();
     }
   }
-  setAudioPlayComplete() {}
+  setAudioPlayComplete() {
+    if (!this.listenEarly) this.startListeningHandler();
+  }
 
   registerStartConversationHandler(handler: any) {
     this.startConversationHandler = handler;

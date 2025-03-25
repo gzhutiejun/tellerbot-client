@@ -25,7 +25,8 @@ export interface ITransactionContext {
     receiptRequested?: boolean;
     depositTenor?: string;
     depositInterestRate?: number;
-    
+    noteMixPerformed?: boolean;
+    executeCompleted?: boolean;
   }
   
   export interface ISessionContext {

@@ -10,8 +10,6 @@ import {
   TransactionName,
 } from "../services/processors/processor.interface";
 
-
-
 export function createTransactionProcessor(tx: TransactionName): IProcessor {
   let processor: IProcessor | undefined;
   switch (tx) {
@@ -68,17 +66,17 @@ export function getGreetingWords() {
   return ret;
 }
 
-
 export async function playAudio(prompts: string[]) {
   myLoggerService.log("playAudio");
   chatStoreService.clearAgentMessages();
-    let questionText = "";
-    prompts.map((q) => {
-      chatStoreService.addAgentMessage(q);
-      questionText += q + ".";
-    });
+  let questionText = "";
+  prompts.map((q) => {
+    chatStoreService.addAgentMessage(q);
+    questionText += q + ".";
+  });
 
-    const ttsRes: GenerateAudioResponse = await myChatbotServiceAgent?.generateaudio(
+  const ttsRes: GenerateAudioResponse =
+    await myChatbotServiceAgent?.generateaudio(
       JSON.stringify({
         action: "generateaudio",
         sessionId: chatStoreService.sessionContext.sessionId,
@@ -87,32 +85,29 @@ export async function playAudio(prompts: string[]) {
       })
     );
 
-    if (
-      ttsRes &&
-      ttsRes.fileName
-    ) {
-      chatStoreService.setAudioUrl(
-        `${ chatStoreService.chatbotUrl}/download/${ttsRes.fileName}`
-      );
-    }
+  if (ttsRes && ttsRes.fileName) {
+    chatStoreService.setAudioUrl(
+      `${chatStoreService.chatbotUrl}/download/${ttsRes.fileName}`
+    );
+  }
 }
 
 export function replayAudio() {
   myLoggerService.log("replayAudio");
 
-  chatStoreService.increaseRepeatCount();
-  if (chatStoreService.repeatCount <=3 ) {
-    if (chatStoreService.startListeningHandler) chatStoreService.startListeningHandler();
-    return;
-  }
-  chatStoreService.resetRepeatCount();
+  // chatStoreService.increaseRepeatCount();
+  // if (chatStoreService.repeatCount <= 3) {
+  //   if (chatStoreService.startListeningHandler)
+  //     chatStoreService.startListeningHandler();
+  //   return;
+  // }
+  // chatStoreService.resetRepeatCount();
   const url = chatStoreService.audioUrl;
   chatStoreService.setAudioUrl("");
   setTimeout(() => {
     chatStoreService.setAudioUrl(url);
-  },500);
+  }, 500);
 }
-
 
 export function extractAccount(account: string): string {
   if (!account) return "";
@@ -120,18 +115,24 @@ export function extractAccount(account: string): string {
   if (acc.includes("credit")) return "credit";
   if (acc.includes("debit")) return "debit";
   if (acc.includes("saving")) return "saving";
-  if (acc.includes("cheque") ||  acc.includes("check")) return "cheque";
+  if (acc.includes("cheque") || acc.includes("check")) return "cheque";
   if (acc.includes("default")) return "default";
-  return ""
+  return "";
 }
-
 
 export function extractCurrency(currency: string): string {
   if (!currency) return "";
   const curr = currency.toLowerCase();
   if (curr.includes("hkd") || curr.includes("hong kong")) return "HKD";
   if (curr.includes("usd") || curr.includes("us dollar")) return "USD";
-  if (curr.includes("twd") ||  curr.includes("tai wan")) return "TWD";
+  if (curr.includes("twd") || curr.includes("tai wan")) return "TWD";
   if (curr.includes("eur") || curr.includes("europe")) return "EUR";
-  return ""
+  return "";
+}
+
+export function extractCancel(data: any): boolean {
+  if (!data) return false;
+  if ("string" === typeof data && data.toLocaleLowerCase().includes("true")) return true;
+  if ("boolean" === typeof data && data) return true;
+  return false;
 }

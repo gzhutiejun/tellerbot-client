@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getGreetingWords, playAudio } from "../../util/util";
+import { extractCancel, getGreetingWords, playAudio } from "../../util/util";
 import { ExtractResponse, SessionResponse } from "../bus-op.interface";
 import { ChatbotActionType, chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
@@ -20,7 +20,7 @@ export class SessionProcessor implements IProcessor {
   };
 
   constructor() {
-    myLoggerService.log("create Session Processor");
+    myLoggerService.log("create SessionProcessor");
   }
   async start() {
     myLoggerService.log("SessionProcessor: start");
@@ -42,8 +42,17 @@ export class SessionProcessor implements IProcessor {
     }
   }
 
-  async process(text: string): Promise<ChatbotAction> {
-    myLoggerService.log("SessionProcessor: process:" + text);
+  async processAtmMessage(message: any): Promise<ChatbotAction> {
+    myLoggerService.log(
+      "SessionProcessor: processAtmMessage" + JSON.stringify(message)
+    );
+    return {
+      actionType: "Idle",
+    };
+  }
+
+  async processText(text: string): Promise<ChatbotAction> {
+    myLoggerService.log("SessionProcessor: processText:" + text);
 
     const req = {
       text: text,
@@ -58,7 +67,7 @@ export class SessionProcessor implements IProcessor {
     try {
       if (res && res.data && res.data.data) {
         const txData = JSON.parse(res.data.data);
-        if (txData.cancel) {
+        if (extractCancel(txData.cancel)) {
           return {
             actionType: "Cancel",
           };
@@ -72,7 +81,7 @@ export class SessionProcessor implements IProcessor {
       }
     } catch (e) {
       console.log("extract:", e);
-      return { actionType: "Repeat" };
+      return { actionType: "ContinueSession" };
     }
 
     const action: ChatbotAction = this.findNextStep();
@@ -80,7 +89,7 @@ export class SessionProcessor implements IProcessor {
       action.actionType === "ContinueSession" &&
       this.currentStep === this.lastStep
     ) {
-      action.actionType = "Repeat";
+      action.playAudioOnly = true;
     }
     this.lastStep = this.currentStep;
 
