@@ -26,7 +26,8 @@ export class SessionProcessor implements IProcessor {
   }
   async start() {
     myLoggerService.log("SessionProcessor: start");
-    this.supportedTransactons = await fetchJson("/config/transactions.json");
+    const transactionConfig = await fetchJson("/config/transactions.json");
+    this.supportedTransactons = transactionConfig.transactions;
     this.lastStep = -1;
     this.currentStep = -1;
     const sessionRes: SessionResponse =
@@ -57,15 +58,12 @@ export class SessionProcessor implements IProcessor {
   async processText(text: string): Promise<ChatbotAction> {
     myLoggerService.log("SessionProcessor: processText:" + text);
 
-    let instruction = translate("supportTransactons") + " : ";
-    for (let i = 0; i < this.supportedTransactons!.length; i++) {
-      instruction += translate(this.supportedTransactons![i]);
-      if (i === this.supportedTransactons!.length - 1) {
-        instruction += ".";
-      } else {
-        instruction += ", ";
-      }
-    }
+    let instruction = "supported transactons: ";
+    this.supportedTransactons!.map((item) => {
+      instruction += item + ",";
+    });
+
+    console.log("instruction", instruction);
     const req = {
       text: text,
       instruction: instruction,

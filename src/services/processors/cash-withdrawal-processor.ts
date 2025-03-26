@@ -79,7 +79,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     const req = {
       text: text,
       instruction:
-        "extract amount or number as amount, currency, and account like like 'saving', 'credit', 'cheque','check' or 'credit'",
+        "supported accounts: 'saving', 'credit', 'cheque','check' or 'credit', extract amount or number as amount, extract currency as currency",
       format: this.template,
     };
 

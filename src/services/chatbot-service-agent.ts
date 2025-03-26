@@ -114,6 +114,7 @@ export class ChatbotServiceAgent {
         const result = await res.json();
         retVal.data  = result;
         retVal.success = true;
+        myLoggerService.log("extract result: " + JSON.stringify(retVal));
       }
     } catch (e: any) {
       myLoggerService.log(e);
