@@ -7,9 +7,44 @@
 //   user-select: none;
 // }
 
-html {
-  font-size: calc(100vh / 768);
 
+@font-face {
+  font-family: "Open Sans";
+  font-weight: 400;
+  font-style: normal;
+  src: local("Open Sans Regular"), url("../fonts/OpenSans-Regular.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Open Sans";
+  font-weight: 500;
+  font-style: normal;
+  src: local("Open Sans Medium"), url("../fonts/OpenSans-SemiBold.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Open Sans";
+  font-weight: 700;
+  font-style: normal;
+  src: local("Open Sans Bold"), url("../fonts/OpenSans-Bold.woff") format("woff");
+}
+
+$acc-font-en: "Open Sans" !default;
+$acc-font-zh: "Open Sans" !default;
+$acc-vw: calc(100vw / 1024);
+$acc-vh: calc(100vh / 768);
+
+* {
+  background-color: transparent;
+  box-sizing: border-box;
+  border: none;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+html {
+  font-size: $acc-vh;
   &.resize {
     @media (height < 768px) {
       font-size: calc(600 / 768 * 1px);
@@ -31,7 +66,7 @@ html {
 
 body {
   line-height: 1.5;
-  font-size: 8px;
+  font-size: 12px;
   margin: 0;
 }
 
