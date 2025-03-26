@@ -19,7 +19,7 @@ export class MainProcessor {
   private mediaStream?: MediaStream;
   private mediaRecorder?: MediaRecorder;
   private audioChunks: Blob[] = [];
-  private debugMode = true;
+  private debugMode = false;
   private atmConnectionOption?: ConnectionOptions;
   private atmConnected = false;
   private chatbotServerConnected = false;
@@ -51,7 +51,7 @@ export class MainProcessor {
     myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
 
     this.atmConnectionOption = {
-      webApiUrl: atmUrl,
+      wsUrl: atmUrl,
     };
 
     // Establish Backend connection
@@ -81,11 +81,14 @@ export class MainProcessor {
 
     myATMServiceAgent.registerMessageHandler(this.atmMessageHandler);
 
-    if (this.atmConnected && this.chatbotServerConnected) {
+    if (myATMServiceAgent.connected && this.chatbotServerConnected) {
       // report ai-teller ready to ATM
-      myATMServiceAgent.send({
-        event: "ai-teller-ready",
-      });
+      setTimeout(() => {
+        myATMServiceAgent.send({
+          event: "ai-teller-ready",
+        });
+      }, 1000);
+
     }
   }
 

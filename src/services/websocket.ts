@@ -41,6 +41,7 @@ export interface ConnectionOptions {
           onError?.(e);
         });
         this.ws.addEventListener("open", () => {
+          myLoggerService.log("open" );
           this.connected = true;
           onOpened?.();
         });
@@ -50,6 +51,7 @@ export interface ConnectionOptions {
       }
     }
     send(message: any) {
+      myLoggerService.log("send");
       if (this.connected) {
         this.ws.send(typeof message === "string" ? message : JSON.stringify(message));
       } else {
