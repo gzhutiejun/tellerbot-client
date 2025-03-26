@@ -19,9 +19,8 @@ export class MainProcessor {
   private mediaStream?: MediaStream;
   private mediaRecorder?: MediaRecorder;
   private audioChunks: Blob[] = [];
-  private debugMode = false;
+  private debugMode = true;
   private atmConnectionOption?: ConnectionOptions;
-  private atmConnected = false;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
   private audioContext?: AudioContext;
@@ -169,6 +168,7 @@ export class MainProcessor {
           const data = {
             session_id: chatStoreService.sessionContext.sessionId,
             file_path: this.lastAudioPath,
+            language: chatStoreService.language,
           };
 
           myLoggerService.log("transcribe start");

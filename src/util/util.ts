@@ -56,11 +56,11 @@ export function getGreetingWords() {
   const currentHour = new Date().getHours();
   let ret;
   if (currentHour >= 12 && currentHour <= 17) {
-    ret = "Good afternoon";
+    ret = "goodAfternoon";
   } else if (currentHour >= 17) {
-    ret = "Good evening";
+    ret = "goodEvening";
   } else {
-    ret = "Good morning";
+    ret = "goodMorning";
   }
 
   return ret;

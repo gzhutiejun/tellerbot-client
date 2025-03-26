@@ -8,6 +8,7 @@ import {
 import { ExtractResponse } from "../bus-op.interface";
 import { chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
+import { translate } from "../i18n/i18n.service";
 import { myLoggerService } from "../logger.service";
 import { ChatbotAction, IProcessor } from "./processor.interface";
 
@@ -65,7 +66,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
         nextAction = {
           actionType: "EndTransaction",
           prompt: [message.parameters.vg],
-          playAudioOnly: true
+          playAudioOnly: true,
         };
         break;
     }
@@ -149,9 +150,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     //step 1
     this.currentStep = 1;
     if (!chatStoreService.sessionContext!.transactionContext?.selectedAccount) {
-      nextAction.prompt = [
-        "Which account do you want to withdrawal money from?",
-      ];
+      nextAction.prompt = [translate("cashWithdrawal_Account")];
       return nextAction;
     }
 
@@ -162,23 +161,21 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       !chatStoreService.sessionContext!.transactionContext?.amount.currency ||
       !chatStoreService.sessionContext!.transactionContext?.amount.value
     ) {
-      nextAction.prompt = [
-        "Which currency and how much money you want to withdraw?",
-      ];
+      nextAction.prompt = [translate("cashWithdrawal_Currency_Amount")];
       return nextAction;
     }
 
     //step 4
     this.currentStep = 4;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
-      nextAction.prompt = ["Which currency do you want to withdraw?"];
+      nextAction.prompt = [translate("cashWithdrawal_Currency")];
       return nextAction;
     }
 
     //step 5
     this.currentStep = 5;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.value) {
-      nextAction.prompt = ["How much money do you want to withdraw?"];
+      nextAction.prompt = [translate("cashWithdrawal_Amount")];
       return nextAction;
     }
 
@@ -186,7 +183,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     this.currentStep = 6;
     if (!chatStoreService.sessionContext!.transactionContext.noteMixPerformed) {
       nextAction.actionType = "AtmInteraction";
-      nextAction.prompt = ["Please wait"];
+      nextAction.prompt = [translate("pleaseWait")];
       nextAction.interactionMessage = {
         action: "note-mix",
         parameters: {
@@ -204,7 +201,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     this.currentStep = 7;
     if (!chatStoreService.sessionContext!.transactionContext.executeCompleted) {
       nextAction.actionType = "AtmInteraction";
-      nextAction.prompt = ["Please wait"];
+      nextAction.prompt = [translate("pleaseWait")];
       nextAction.interactionMessage = {
         action: "cash-withdrawal",
         parameters: {

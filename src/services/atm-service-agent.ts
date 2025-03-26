@@ -59,7 +59,7 @@ export class AtmServiceAgent {
     this.messageReceivedHandler = handler;
 
     if (chatStoreService.debugMode) {
-      chatStoreService.setLanguage("en");
+      chatStoreService.setLanguage("zh");
       chatStoreService.registerStartConversationHandler(
         this.openSessionHandler
       );

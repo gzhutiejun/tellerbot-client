@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { fetchJson } from "../../util/ajax";
 import { extractCancel, getGreetingWords, playAudio } from "../../util/util";
 import { ExtractResponse, SessionResponse } from "../bus-op.interface";
 import { ChatbotActionType, chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
+import { translate } from "../i18n/i18n.service";
 import { myLoggerService } from "../logger.service";
 import {
   ChatbotAction,
@@ -18,12 +20,13 @@ export class SessionProcessor implements IProcessor {
     transaction: "",
     cancel: false,
   };
-
+  private supportedTransactons?: string[] = [];
   constructor() {
     myLoggerService.log("create SessionProcessor");
   }
   async start() {
     myLoggerService.log("SessionProcessor: start");
+    this.supportedTransactons = await fetchJson("/config/transactions.json");
     this.lastStep = -1;
     this.currentStep = -1;
     const sessionRes: SessionResponse =
@@ -36,7 +39,7 @@ export class SessionProcessor implements IProcessor {
       chatStoreService.setSessionId(sessionRes.sessionId);
 
       const prompts = [
-        `${getGreetingWords()}, I am NCR Teller assistant, which service do you need?`,
+        `${translate(getGreetingWords())}, ${translate("firstAskServices")}`,
       ];
       playAudio(prompts);
     }
@@ -54,10 +57,18 @@ export class SessionProcessor implements IProcessor {
   async processText(text: string): Promise<ChatbotAction> {
     myLoggerService.log("SessionProcessor: processText:" + text);
 
+    let instruction = translate("supportTransactons") + " : ";
+    for (let i = 0; i < this.supportedTransactons!.length; i++) {
+      instruction += translate(this.supportedTransactons![i]);
+      if (i === this.supportedTransactons!.length - 1) {
+        instruction += ".";
+      } else {
+        instruction += ", ";
+      }
+    }
     const req = {
       text: text,
-      instruction:
-        "We support transactions: cash deposit, cash withdrawal, transfer, please extract the transaction is requested.",
+      instruction: instruction,
       format: this.template,
     };
     const res: ExtractResponse = await myChatbotServiceAgent.extract(
@@ -99,7 +110,7 @@ export class SessionProcessor implements IProcessor {
   private findNextStep(): ChatbotAction {
     const action = {
       actionType: "ContinueSession" as ChatbotActionType,
-      prompt: ["which service do you need?"],
+      prompt: [translate("askServices")],
     };
 
     this.currentStep = 1;
