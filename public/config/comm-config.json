@@ -1,6 +1,6 @@
 {
     "servers": {
         "atmUrl": "ws://localhost:19500/atm-server",
-        "chatbotUrl": "http://192.168.8.212:8000"
+        "chatbotUrl": "http://192.168.2.77:8000"
     }
 }
