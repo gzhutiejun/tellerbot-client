@@ -19,7 +19,7 @@ export class MainProcessor {
   private mediaStream?: MediaStream;
   private mediaRecorder?: MediaRecorder;
   private audioChunks: Blob[] = [];
-  private debugMode = true;
+  private debugMode = false;
   private atmConnectionOption?: ConnectionOptions;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
@@ -48,7 +48,8 @@ export class MainProcessor {
    */
   async init(atmUrl: string, chatbotUrl: string) {
     myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
-
+    chatStoreService.setLanguage("zh-CN");
+    // setLanguage(chatStoreService.language);
     this.atmConnectionOption = {
       wsUrl: atmUrl,
     };
@@ -87,7 +88,6 @@ export class MainProcessor {
           event: "ai-teller-ready",
         });
       }, 1000);
-
     }
   }
 
@@ -324,7 +324,6 @@ export class MainProcessor {
     this.sessionProcessor.start();
   }
   private startListening = () => {
-
     if (this.currentAction.actionType === "EndTransaction") {
       this.anotherTransacton();
       return;
@@ -422,17 +421,25 @@ export class MainProcessor {
             this.currentAction.playAudioOnly
           );
         } else if (this.currentAction.actionType === "EndTransaction") {
+          if (this.currentAction!.prompt) {
+            playAudio(
+              this.currentAction!.prompt!,
+              this.currentAction.playAudioOnly
+            );
+          } else {
+            this.startSession();
+          }
+        }
+        break;
+      case "EndTransaction":
+        if (this.currentAction!.prompt) {
           playAudio(
             this.currentAction!.prompt!,
             this.currentAction.playAudioOnly
           );
+        } else {
+          this.startSession();
         }
-        break;
-      case "EndTransaction":
-        playAudio(
-          this.currentAction!.prompt!,
-          this.currentAction.playAudioOnly
-        );
         break;
       case "AtmInteraction":
         chatStoreService.setChatState("Notification");

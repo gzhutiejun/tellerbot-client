@@ -48,8 +48,12 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     };
     switch (message.event) {
       case "note-mix":
+        if (message.parameters.success) {
         chatStoreService.sessionContext!.transactionContext!.noteMixPerformed =
           message.parameters.success;
+        } else {
+          chatStoreService.sessionContext!.transactionContext!.amount = undefined;
+        }
         nextAction = this.findNextStep();
         break;
       case "notification":
@@ -65,8 +69,6 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       case "end-transaction":
         nextAction = {
           actionType: "EndTransaction",
-          prompt: [message.parameters.vg],
-          playAudioOnly: true,
         };
         break;
     }
@@ -81,6 +83,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       instruction:
         "supported accounts: 'saving', 'credit', 'cheque','check' or 'credit', extract amount or number as amount, extract currency as currency",
       format: this.template,
+      language: chatStoreService.language
     };
 
     const res: ExtractResponse = await myChatbotServiceAgent.extract(

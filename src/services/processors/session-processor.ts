@@ -68,6 +68,7 @@ export class SessionProcessor implements IProcessor {
       text: text,
       instruction: instruction,
       format: this.template,
+      language: chatStoreService.language
     };
     const res: ExtractResponse = await myChatbotServiceAgent.extract(
       JSON.stringify(req)
