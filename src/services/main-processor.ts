@@ -101,7 +101,14 @@ export class MainProcessor {
     this.audioChunks = [];
 
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
+      audio: {
+        channelCount: 1, 
+        sampleRate: 64000, 
+        sampleSize: 22272, 
+        echoCancellation: true, 
+        noiseSuppression: true, 
+        autoGainControl: true, 
+      },
     });
 
     chatStoreService.setStatus("Listening...");
@@ -148,7 +155,7 @@ export class MainProcessor {
       if (!chatStoreService.sessionContext!.sessionId) return;
 
       if (this.audioChunks.length > 0) {
-        const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
+        const audioBlob = new Blob(this.audioChunks);
         // const audioUrl = URL.createObjectURL(audioBlob);
         // const audio = new Audio(audioUrl);
         // audio.play();
