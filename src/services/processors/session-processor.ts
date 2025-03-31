@@ -68,7 +68,7 @@ export class SessionProcessor implements IProcessor {
       text: text,
       instruction: instruction,
       format: this.template,
-      language: chatStoreService.language
+      language: chatStoreService.language,
     };
     const res: ExtractResponse = await myChatbotServiceAgent.extract(
       JSON.stringify(req)
@@ -127,6 +127,12 @@ export class SessionProcessor implements IProcessor {
     if (!tx) return undefined;
     const val: string = tx.toLowerCase();
     if (val.includes("withdraw")) return "cash-withdrawal";
+    if (
+      val.includes("time deposit") ||
+      val.includes("fix deposit") ||
+      val.includes("fixed deposit")
+    )
+      return "time-deposit";
     if (val.includes("time") && val.includes("deposit")) return "time-deposit";
     return undefined;
   }

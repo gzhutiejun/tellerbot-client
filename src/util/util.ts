@@ -9,6 +9,7 @@ import {
   IProcessor,
   TransactionName,
 } from "../services/processors/processor.interface";
+import { TimeDepositTxProcessor } from "../services/processors/time-deposit-processor";
 
 export function createTransactionProcessor(tx: TransactionName): IProcessor {
   let processor: IProcessor | undefined;
@@ -17,6 +18,7 @@ export function createTransactionProcessor(tx: TransactionName): IProcessor {
       processor = new CashWithdrawalTxProcessor();
       break;
     case "time-deposit":
+      processor = new TimeDepositTxProcessor();
       break;
   }
   return processor!;
@@ -70,10 +72,9 @@ export async function playAudio(prompts: string[], playMode: boolean = false) {
   myLoggerService.log("playAudio");
   chatStoreService.clearAgentMessages();
   chatStoreService.setPlayAudioOnly(playMode);
-  let questionText = "";
+  const questionText = prompts[0];
   prompts.map((q) => {
     chatStoreService.addAgentMessage(q);
-    questionText += q + ".";
   });
 
   const ttsRes: GenerateAudioResponse =
@@ -136,4 +137,16 @@ export function extractCancel(data: any): boolean {
   if ("string" === typeof data && data.toLocaleLowerCase().includes("true")) return true;
   if ("boolean" === typeof data && data) return true;
   return false;
+}
+
+export function extractDepositTerm(term: string, terms: string[]): string {
+  if (!term) return "";
+  let ret:string = "";
+  for (let i = 0; i < terms.length; i++) {
+    if (term.toLowerCase().includes(terms[i])) {
+      ret = terms[i];
+      break;
+    }
+  }
+  return ret;
 }

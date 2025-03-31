@@ -3,6 +3,7 @@ import {
   extractAccount,
   extractCancel,
   extractCurrency,
+  extractDepositTerm,
   playAudio,
 } from "../../util/util";
 import { ExtractResponse } from "../bus-op.interface";
@@ -12,7 +13,7 @@ import { translate } from "../i18n/i18n.service";
 import { myLoggerService } from "../logger.service";
 import { ChatbotAction, IProcessor } from "./processor.interface";
 
-export class CashWithdrawalTxProcessor implements IProcessor {
+export class TimeDepositTxProcessor implements IProcessor {
   private lastStep = -1;
   private currentStep = -1;
   private template = {
@@ -20,13 +21,15 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     amount: 0,
     cancel: false,
     account: "",
+    term: "",
   };
 
+  private terms: string[] = [];
   constructor() {
-    myLoggerService.log("create CashWithdrawalTxProcessor");
+    myLoggerService.log("create TimeDepositTxProcessor");
   }
   async start() {
-    myLoggerService.log("CashWithdrawalTxProcessor: start");
+    myLoggerService.log("TimeDepositTxProcessor: start");
     this.lastStep = -1;
     this.currentStep = -1;
 
@@ -40,19 +43,34 @@ export class CashWithdrawalTxProcessor implements IProcessor {
 
   async processAtmMessage(message: any): Promise<ChatbotAction> {
     myLoggerService.log(
-      "CashWithdrawalTxProcessor: processAtmMessage" + JSON.stringify(message)
+      "TimeDepositTxProcessor: processAtmMessage" + JSON.stringify(message)
     );
 
     let nextAction: ChatbotAction = {
       actionType: "None",
     };
     switch (message.event) {
-      case "note-mix":
+      case "time-deposit-terms":
         if (message.parameters.success) {
-        chatStoreService.sessionContext!.transactionContext!.noteMixPerformed =
-          message.parameters.success;
+          chatStoreService.sessionContext!.transactionContext!.timeDepositTerms =
+            message.parameters.terms;
+          this.terms = [];
+          message.parameters.terms.map((item: { term: string }) => {
+            this.terms.push(item.term.toLowerCase());
+          });
         } else {
-          chatStoreService.sessionContext!.transactionContext!.amount = undefined;
+          chatStoreService.sessionContext!.transactionContext!.timeDepositTerms =
+            undefined;
+        }
+        nextAction = this.findNextStep();
+        break;
+      case "balances":
+        if (message.parameters.success) {
+          chatStoreService.sessionContext!.transactionContext!.balanceAmounts =
+            message.parameters.balances;
+        } else {
+          chatStoreService.sessionContext!.transactionContext!.balanceAmounts =
+            undefined;
         }
         nextAction = this.findNextStep();
         break;
@@ -74,17 +92,22 @@ export class CashWithdrawalTxProcessor implements IProcessor {
         break;
     }
 
+    if (nextAction.actionType === "AtmInteraction") {
+      chatStoreService.setPlayAudioOnly(true);
+    } else {
+      chatStoreService.setPlayAudioOnly(false);
+    }
     return nextAction;
   }
 
   async processText(text: string): Promise<ChatbotAction> {
-    myLoggerService.log("CashWithdrawalTxProcessor: processText: " + text);
+    myLoggerService.log("TimeDepositTxProcessor: processText: " + text);
     const req = {
       text: text,
       instruction:
-        "supported accounts: 'saving', 'credit', 'cheque','check' or 'credit', extract amount or number as amount, extract currency as currency",
+        "supported accounts: 'saving', 'credit', 'cheque','check' or 'credit', extract amount or number as amount, extract currency as currency. supported deposit terms: '3 months', '6 months', '1 year', '3 years', extract deposit term as term. ",
       format: this.template,
-      language: chatStoreService.language
+      language: chatStoreService.language,
     };
 
     const res: ExtractResponse = await myChatbotServiceAgent.extract(
@@ -114,7 +137,9 @@ export class CashWithdrawalTxProcessor implements IProcessor {
         if (txData.account)
           chatStoreService.sessionContext!.transactionContext!.selectedAccount =
             extractAccount(txData.account);
-
+        if (txData.term)
+          chatStoreService.sessionContext!.transactionContext!.selectedTimeDepositTerm =
+            extractDepositTerm(txData.term, this.terms);
         myLoggerService.log(
           "transactionContext: " +
             JSON.stringify(chatStoreService.sessionContext!.transactionContext!)
@@ -124,23 +149,21 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       console.log("extract error:", e);
     }
 
-    const action: ChatbotAction = this.findNextStep();
+    const nextAction: ChatbotAction = this.findNextStep();
     myLoggerService.log(
       "nextAction: " +
-        JSON.stringify(action) +
+        JSON.stringify(nextAction) +
         " currentStep:" +
         this.currentStep
     );
 
-    if (
-      action.actionType === "ContinueTransaction" &&
-      this.currentStep === this.lastStep
-    ) {
-      action.playAudioOnly = true;
+    if (nextAction.actionType === "AtmInteraction") {
+      chatStoreService.setPlayAudioOnly(true);
+    } else {
+      chatStoreService.setPlayAudioOnly(false);
     }
-    this.lastStep = this.currentStep;
 
-    return action;
+    return nextAction;
   }
 
   private findNextStep(): ChatbotAction {
@@ -151,63 +174,88 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       prompt: [],
     };
 
-    //step 1
     this.currentStep = 1;
     if (!chatStoreService.sessionContext!.transactionContext?.selectedAccount) {
-      nextAction.prompt = [translate("cashWithdrawal_Account")];
+      nextAction.prompt = [translate("deposit_from_Account")];
       return nextAction;
     }
 
-    //step 3
-    this.currentStep = 3;
-    if (
-      !chatStoreService.sessionContext!.transactionContext?.amount ||
-      !chatStoreService.sessionContext!.transactionContext?.amount.currency ||
-      !chatStoreService.sessionContext!.transactionContext?.amount.value
-    ) {
-      nextAction.prompt = [translate("cashWithdrawal_Currency_Amount")];
-      return nextAction;
-    }
-
-    //step 4
-    this.currentStep = 4;
-    if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
-      nextAction.prompt = [translate("cashWithdrawal_Currency")];
-      return nextAction;
-    }
-
-    //step 5
-    this.currentStep = 5;
-    if (!chatStoreService.sessionContext!.transactionContext?.amount.value) {
-      nextAction.prompt = [translate("cashWithdrawal_Amount")];
-      return nextAction;
-    }
-
-    //step 6
-    this.currentStep = 6;
-    if (!chatStoreService.sessionContext!.transactionContext.noteMixPerformed) {
+    this.currentStep = 2;
+    if (!chatStoreService.sessionContext!.transactionContext.balanceAmounts) {
       nextAction.actionType = "AtmInteraction";
       nextAction.prompt = [translate("pleaseWait")];
       nextAction.interactionMessage = {
-        action: "note-mix",
+        action: "retrieve-balance-amounts",
         parameters: {
-          currency:
-            chatStoreService.sessionContext.transactionContext!.amount!
-              .currency,
-          amount:
-            chatStoreService.sessionContext.transactionContext!.amount!.value,
+          accountType:
+            chatStoreService.sessionContext!.transactionContext.selectedAccount,
         },
       };
       return nextAction;
     }
 
-    //step 7
+    this.currentStep = 4;
+    if (
+      !chatStoreService.sessionContext!.transactionContext?.amount ||
+      !chatStoreService.sessionContext!.transactionContext?.amount.currency ||
+      !chatStoreService.sessionContext!.transactionContext?.amount.value
+    ) {
+      nextAction.prompt = [translate("deposit_Currency_Amount")];
+      return nextAction;
+    }
+
+    this.currentStep = 5;
+    if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
+      nextAction.prompt = [translate("deposit_Currency")];
+      return nextAction;
+    }
+
+    this.currentStep = 6;
+    if (!chatStoreService.sessionContext!.transactionContext?.amount.value) {
+      nextAction.prompt = [translate("deposit_Amount")];
+      return nextAction;
+    }
+
     this.currentStep = 7;
+    if (!chatStoreService.sessionContext!.transactionContext.timeDepositTerms) {
+      nextAction.actionType = "AtmInteraction";
+      nextAction.interactionMessage = {
+        action: "retrieve-time-deposit-term",
+      };
+      return nextAction;
+    }
+
+    this.currentStep = 8;
+    if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
+      nextAction.prompt = [translate("deposit_Currency")];
+      return nextAction;
+    }
+
+    this.currentStep = 9;
+    if (
+      !chatStoreService.sessionContext!.transactionContext
+        ?.selectedTimeDepositTerm
+    ) {
+      nextAction.prompt = [translate("deposit_Term_Interest")];
+      nextAction.prompt.push(translate("deposit term") + " " + translate("interest"));
+      chatStoreService.sessionContext!.transactionContext.timeDepositTerms.forEach(
+        (item) => {
+          nextAction.prompt?.push(
+            translate(item.term) +
+              " :         " +
+              item.interestPercentage +
+              "%"
+          );
+        }
+      );
+      return nextAction;
+    }
+
+    this.currentStep = 10;
     if (!chatStoreService.sessionContext!.transactionContext.executeCompleted) {
       nextAction.actionType = "AtmInteraction";
-      nextAction.prompt = [translate("pleaseWait")];
       nextAction.interactionMessage = {
-        action: "cash-withdrawal",
+        action: "time-deposit",
         parameters: {
           currency:
             chatStoreService.sessionContext.transactionContext!.amount!
@@ -217,6 +265,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
           accountType:
             chatStoreService.sessionContext!.transactionContext.selectedAccount,
           receiptRequested: true,
+          term: 3,
         },
       };
       return nextAction;

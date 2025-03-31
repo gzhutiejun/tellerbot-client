@@ -102,12 +102,12 @@ export class MainProcessor {
 
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        channelCount: 1, 
-        sampleRate: 64000, 
-        sampleSize: 22272, 
-        echoCancellation: true, 
-        noiseSuppression: true, 
-        autoGainControl: true, 
+        channelCount: 1,
+        sampleRate: 64000,
+        sampleSize: 22272,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
       },
     });
 
@@ -284,7 +284,7 @@ export class MainProcessor {
           this.startSession();
           break;
         case "end-transaction":
-          this.process("", atmMessage);
+          this.process(atmMessage);
           break;
         case "close-session":
           this.clearSessionData();
@@ -302,7 +302,7 @@ export class MainProcessor {
           break;
       }
     } else if (atmMessage.event) {
-      this.process("", atmMessage);
+      this.process(atmMessage);
     }
   };
 
@@ -314,7 +314,7 @@ export class MainProcessor {
 
   private anotherTransacton() {
     this.currentAction = {
-      actionType: "None",
+      actionType: "ContinueSession",
     };
     this.transactionProcessor = undefined;
     this.sessionProcessor?.start();
@@ -335,38 +335,66 @@ export class MainProcessor {
       this.anotherTransacton();
       return;
     }
-    if (chatStoreService.chatState === "Notification") return;
+    myLoggerService.log(
+      "startListening, notification:" + chatStoreService.notification
+    );
+    if (chatStoreService.notification) return;
     myLoggerService.log("startListening");
     chatStoreService.setCustomerMessage("");
     this.startRecording();
   };
 
-  private async process(user_text: string = "", atmMessage: any = undefined) {
-    myLoggerService.log(`process: ${user_text}`);
+  private async processATMMessage(atmMessage: any) {
+    myLoggerService.log("processATMMessage");
+    if (this.transactionProcessor) {
+      this.currentAction = await this.transactionProcessor.processAtmMessage(
+        atmMessage
+      );
+    } else {
+      this.currentAction = await this.sessionProcessor!.processAtmMessage(
+        atmMessage
+      );
+    }
+
+    if (this.currentAction.actionType === "Cancel") {
+      this.stopRecording();
+      myChatbotServiceAgent?.closesession(
+        JSON.stringify({
+          session_id: chatStoreService.sessionContext.sessionId,
+        })
+      );
+      myATMServiceAgent?.send({
+        event: "session-closed",
+      });
+    } else if (
+      this.currentAction.actionType === "ContinueSession" ||
+      this.currentAction.actionType === "ContinueTransaction" ||
+      this.currentAction.actionType === "EndTransaction"
+    ) {
+      playAudio(this.currentAction!.prompt!);
+    } else {
+      myLoggerService.log(
+        "Need handle action:" + JSON.stringify(this.currentAction)
+      );
+    }
+    return;
+  }
+  private async process(message: string | object) {
+    const user_text = typeof message === "string" ? message : undefined;
+    const atmMessage = typeof message === "object" ? message : undefined;
+    myLoggerService.log(`process: ${user_text} ${user_text}`);
 
     if (!chatStoreService.sessionContext.sessionId) return;
 
-    chatStoreService.setChatState("Interaction");
-
-    chatStoreService.setCustomerMessage(user_text);
+    chatStoreService.setCustomerMessage(user_text || "");
 
     if (atmMessage) {
-      if (this.transactionProcessor) {
-        this.currentAction = await this.transactionProcessor.processAtmMessage(
-          atmMessage
-        );
-      } else {
-        this.currentAction = await this.sessionProcessor!.processAtmMessage(
-          atmMessage
-        );
-      }
+      this.processATMMessage(atmMessage);
+      return;
     }
+
     myLoggerService.log(
       "processTranscript currentAction1:" + JSON.stringify(this.currentAction)
-    );
-
-    chatStoreService.setPlayAudioOnly(
-      this.currentAction.playAudioOnly || false
     );
 
     switch (this.currentAction.actionType!) {
@@ -375,7 +403,7 @@ export class MainProcessor {
       case "NewSession":
       case "ContinueSession":
         this.currentAction = await this.sessionProcessor!.processText(
-          user_text
+          user_text || ""
         )!;
         myLoggerService.log(
           "process currentAction2:" + JSON.stringify(this.currentAction)
@@ -385,7 +413,7 @@ export class MainProcessor {
           this.cancelHandler();
         }
         if (this.currentAction.actionType === "ContinueSession") {
-          await playAudio(this.currentAction!.prompt!);
+          playAudio(this.currentAction!.prompt!);
         } else if (this.currentAction.actionType === "NewTransaction") {
           this.transactionProcessor = createTransactionProcessor(
             chatStoreService.sessionContext!.transactionContext!
@@ -402,7 +430,7 @@ export class MainProcessor {
         break;
       case "ContinueTransaction":
         this.currentAction = await this.transactionProcessor!.processText(
-          user_text
+          user_text || ""
         )!;
         myLoggerService.log(
           "process currentAction3:" + JSON.stringify(this.currentAction)
@@ -413,7 +441,6 @@ export class MainProcessor {
         if (this.currentAction.actionType === "Cancel") {
           this.cancelHandler();
         } else if (this.currentAction.actionType === "AtmInteraction") {
-          chatStoreService.setChatState("Notification");
           if (!chatStoreService.playing) {
             playAudio(
               this.currentAction!.prompt!,
@@ -449,7 +476,6 @@ export class MainProcessor {
         }
         break;
       case "AtmInteraction":
-        chatStoreService.setChatState("Notification");
         if (!chatStoreService.playing) playAudio(this.currentAction!.prompt!);
         myATMServiceAgent.send(this.currentAction.interactionMessage);
         break;

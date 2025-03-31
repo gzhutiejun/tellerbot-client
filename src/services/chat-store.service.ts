@@ -14,7 +14,6 @@ export type ChatbotActionType =
   | "EndTransaction"
   | "Notification"
   | "AtmInteraction";
-export type ChatState = "Interaction" | "Notification";
 
 export class ChatStoreService {
   listenEarly = false;
@@ -36,7 +35,7 @@ export class ChatStoreService {
   sessionContext: ISessionContext = {
     sessionId: "",
   };
-  chatState: ChatState = "Interaction";
+
   repeatCount = 0;
   constructor() {
     makeAutoObservable(this);
@@ -59,17 +58,16 @@ export class ChatStoreService {
 
     if (this.audioUrl && !this.playAudioOnly) {
       setTimeout(() => {
-        console.log("ready to record media");
-        if (this.listenEarly && this.startListeningHandler) this.startListeningHandler();
-      }, 100);
+        myLoggerService.log("setAudioUrl: ready to record media");
+        if (this.listenEarly && this.startListeningHandler)
+          this.startListeningHandler();
+      });
     }
   }
   setMic(mic: boolean) {
     this.mic = mic;
   }
-  setChatState(state: ChatState) {
-    this.chatState = state;
-  }
+
   setLanguage(lang: string) {
     this.language = lang;
   }
@@ -107,7 +105,10 @@ export class ChatStoreService {
   }
   setAudioPlayComplete() {
     this.playing = false;
-    if (!this.listenEarly) this.startListeningHandler();
+    console.log("setAudioPlayComplete: playAudioOnly:", this.playAudioOnly);
+    if (!this.listenEarly && !this.playAudioOnly) {
+      this.startListeningHandler();
+    }
   }
 
   registerStartConversationHandler(handler: any) {
