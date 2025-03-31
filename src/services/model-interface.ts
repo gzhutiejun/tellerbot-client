@@ -19,7 +19,7 @@ export interface Term {
 export interface ITransactionContext {
     amount?: IAmount;
     currentTransaction?: string;
-    balanceAmounts?: IBalanceAmount[];
+    balanceAmounts?: IAmount[];
     transactionFee?: IFee;
     acceptFee?: boolean;
     selectedAccount?: string;

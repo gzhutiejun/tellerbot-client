@@ -25,7 +25,7 @@ export default {
       "How much money and which currency do you want to deposit?",
     deposit_Currency: "Which currency do you want to deposit?",
     deposit_Amount: "How much money do you want to deposit?",
-    deposit_Term: "Term",
+    "deposit term": "Term",
     deposit_Term_Interest: "Please select deposit term",
     deposit_Term_detail: "There are below time deposit terms",
     "one month": "one month",
@@ -46,5 +46,6 @@ export default {
     "3 years": "three years",
     "5 years": "five years",
     interest: "interest",
+    "balance amounts": "Your available balance amounts",
   },
 };

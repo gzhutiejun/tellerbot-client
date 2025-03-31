@@ -9,6 +9,7 @@ import {
 import { ExtractResponse } from "../bus-op.interface";
 import { chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
+import { myFormatorService } from "../formator.service";
 import { translate } from "../i18n/i18n.service";
 import { myLoggerService } from "../logger.service";
 import { ChatbotAction, IProcessor } from "./processor.interface";
@@ -201,6 +202,13 @@ export class TimeDepositTxProcessor implements IProcessor {
       !chatStoreService.sessionContext!.transactionContext?.amount.value
     ) {
       nextAction.prompt = [translate("deposit_Currency_Amount")];
+      nextAction.prompt.push(translate("balance amounts"));
+      console.log(chatStoreService.sessionContext!.transactionContext!.balanceAmounts);
+      chatStoreService.sessionContext!.transactionContext!.balanceAmounts.map((item) => {
+        if (item.value! > 0) {
+            nextAction.prompt?.push(myFormatorService.numberWithCommas(item.value!.toString()) + " " + item.currency);
+        }
+      })
       return nextAction;
     }
 

@@ -43,5 +43,6 @@ export default {
     "3 years": "3年",
     "5 years": "5年",
     interest: "利息",
+    "balance amounts": "您的可用余额",
   },
 };
