@@ -34,6 +34,7 @@ export interface ITransactionContext {
     executeCompleted?: boolean;
     timeDepositTerms?: Term[];
     selectedTimeDepositTerm?: string;
+    customerConfirmed?: boolean;
   }
   
   export interface ISessionContext {

@@ -44,5 +44,6 @@ export default {
     "5 years": "5年",
     interest: "利息",
     "balance amounts": "您的可用余额",
+    "confirm transaction": "请确认交易",
   },
 };

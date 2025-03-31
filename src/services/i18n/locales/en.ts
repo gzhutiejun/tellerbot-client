@@ -47,5 +47,6 @@ export default {
     "5 years": "five years",
     interest: "interest",
     "balance amounts": "Your available balance amounts",
+    "confirm transaction": "Please confirm the transaction",
   },
 };

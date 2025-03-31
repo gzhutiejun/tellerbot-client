@@ -141,6 +141,9 @@ export class TimeDepositTxProcessor implements IProcessor {
         if (txData.term)
           chatStoreService.sessionContext!.transactionContext!.selectedTimeDepositTerm =
             extractDepositTerm(txData.term, this.terms);
+        if (txData.confirm)
+          chatStoreService.sessionContext!.transactionContext!.customerConfirmed =
+            true;
         myLoggerService.log(
           "transactionContext: " +
             JSON.stringify(chatStoreService.sessionContext!.transactionContext!)
@@ -203,12 +206,20 @@ export class TimeDepositTxProcessor implements IProcessor {
     ) {
       nextAction.prompt = [translate("deposit_Currency_Amount")];
       nextAction.prompt.push(translate("balance amounts"));
-      console.log(chatStoreService.sessionContext!.transactionContext!.balanceAmounts);
-      chatStoreService.sessionContext!.transactionContext!.balanceAmounts.map((item) => {
-        if (item.value! > 0) {
-            nextAction.prompt?.push(myFormatorService.numberWithCommas(item.value!.toString()) + " " + item.currency);
+      console.log(
+        chatStoreService.sessionContext!.transactionContext!.balanceAmounts
+      );
+      chatStoreService.sessionContext!.transactionContext!.balanceAmounts.map(
+        (item) => {
+          if (item.value! > 0) {
+            nextAction.prompt?.push(
+              myFormatorService.numberWithCommas(item.value!.toString()) +
+                " " +
+                item.currency
+            );
+          }
         }
-      })
+      );
       return nextAction;
     }
 
@@ -245,21 +256,40 @@ export class TimeDepositTxProcessor implements IProcessor {
         ?.selectedTimeDepositTerm
     ) {
       nextAction.prompt = [translate("deposit_Term_Interest")];
-      nextAction.prompt.push(translate("deposit term") + " " + translate("interest"));
+      nextAction.prompt.push(
+        translate("deposit term") + " " + translate("interest")
+      );
       chatStoreService.sessionContext!.transactionContext.timeDepositTerms.forEach(
         (item) => {
           nextAction.prompt?.push(
-            translate(item.term) +
-              " :         " +
-              item.interestPercentage +
-              "%"
+            translate(item.term) + " :         " + item.interestPercentage + "%"
           );
         }
       );
       return nextAction;
     }
+    // this.currentStep = 10;
+    // if (
+    //   !chatStoreService.sessionContext!.transactionContext?.customerConfirmed
+    // ) {
+    //   nextAction.prompt = [translate("confirm transaction")];
+    //   nextAction.prompt.push(
+    //     myFormatorService.numberWithCommas(
+    //       chatStoreService.sessionContext!.transactionContext.amount.value.toString()
+    //     ) +
+    //       " " +
+    //       chatStoreService.sessionContext!.transactionContext.amount.currency
+    //   );
+    //   nextAction.prompt.push(
+    //     translate(
+    //       chatStoreService.sessionContext.transactionContext!
+    //         .selectedTimeDepositTerm
+    //     )
+    //   );
+    //   return nextAction;
+    // }
 
-    this.currentStep = 10;
+    this.currentStep = 11;
     if (!chatStoreService.sessionContext!.transactionContext.executeCompleted) {
       nextAction.actionType = "AtmInteraction";
       nextAction.interactionMessage = {
