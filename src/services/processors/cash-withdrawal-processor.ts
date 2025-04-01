@@ -11,16 +11,13 @@ import { myChatbotServiceAgent } from "../chatbot-service-agent";
 import { translate } from "../i18n/i18n.service";
 import { myLoggerService } from "../logger.service";
 import { ChatbotAction, IProcessor } from "./processor.interface";
+import {
+  getCashWithdrawalPromptSchema
+} from "./prompt-schema";
 
 export class CashWithdrawalTxProcessor implements IProcessor {
   private lastStep = -1;
   private currentStep = -1;
-  private template = {
-    currency: "",
-    amount: 0,
-    cancel: false,
-    account: "",
-  };
 
   constructor() {
     myLoggerService.log("create CashWithdrawalTxProcessor");
@@ -49,10 +46,11 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     switch (message.event) {
       case "note-mix":
         if (message.parameters.success) {
-        chatStoreService.sessionContext!.transactionContext!.noteMixPerformed =
-          message.parameters.success;
+          chatStoreService.sessionContext!.transactionContext!.noteMixPerformed =
+            message.parameters.success;
         } else {
-          chatStoreService.sessionContext!.transactionContext!.amount = undefined;
+          chatStoreService.sessionContext!.transactionContext!.amount =
+            undefined;
         }
         nextAction = this.findNextStep();
         break;
@@ -79,12 +77,12 @@ export class CashWithdrawalTxProcessor implements IProcessor {
 
   async processText(text: string): Promise<ChatbotAction> {
     myLoggerService.log("CashWithdrawalTxProcessor: processText: " + text);
+    const promptSchema = getCashWithdrawalPromptSchema();
     const req = {
       text: text,
-      instruction:
-        "supported accounts: 'saving', 'credit', 'cheque','check' or 'credit', extract amount or number as amount, extract currency as currency",
-      format: this.template,
-      language: chatStoreService.language
+      instruction: promptSchema.instruction,
+      schema: promptSchema.schema,
+      language: chatStoreService.language,
     };
 
     const res: ExtractResponse = await myChatbotServiceAgent.extract(

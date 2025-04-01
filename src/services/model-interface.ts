@@ -41,5 +41,7 @@ export interface ITransactionContext {
     accounts?: string[];
     sessionId?: string;
     mobileNumber?: string;
-    transactionContext?: ITransactionContext
+    transactionContext?: ITransactionContext;
+    supportedTransactons?: string[];
+
   }

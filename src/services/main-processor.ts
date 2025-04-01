@@ -324,9 +324,8 @@ export class MainProcessor {
     myLoggerService.log("startSession");
     this.clearSessionData();
     this.currentAction.actionType = "NewSession";
-
     this.sessionProcessor = new SessionProcessor();
-
+    
     chatStoreService.chatbotUrl = this.chatbotConnectionOption!.webApiUrl!;
     this.sessionProcessor.start();
   }

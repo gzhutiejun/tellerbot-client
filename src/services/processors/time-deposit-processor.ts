@@ -12,18 +12,16 @@ import { myChatbotServiceAgent } from "../chatbot-service-agent";
 import { myFormatorService } from "../formator.service";
 import { translate } from "../i18n/i18n.service";
 import { myLoggerService } from "../logger.service";
-import { ChatbotAction, IProcessor } from "./processor.interface";
+import { ChatbotAction, IProcessor, PromptType } from "./processor.interface";
+import {
+  getConfirmationPromptSchema,
+  getTimeDepositPromptSchema,
+} from "./prompt-schema";
 
 export class TimeDepositTxProcessor implements IProcessor {
   private lastStep = -1;
   private currentStep = -1;
-  private template = {
-    currency: "",
-    amount: 0,
-    cancel: false,
-    account: "",
-    term: "",
-  };
+  private promptStage: PromptType = "transaction";
 
   private terms: string[] = [];
   constructor() {
@@ -46,7 +44,6 @@ export class TimeDepositTxProcessor implements IProcessor {
     myLoggerService.log(
       "TimeDepositTxProcessor: processAtmMessage" + JSON.stringify(message)
     );
-
     let nextAction: ChatbotAction = {
       actionType: "None",
     };
@@ -103,11 +100,20 @@ export class TimeDepositTxProcessor implements IProcessor {
 
   async processText(text: string): Promise<ChatbotAction> {
     myLoggerService.log("TimeDepositTxProcessor: processText: " + text);
+
+    const txSchema = getTimeDepositPromptSchema();
+    const confirmSchema = getConfirmationPromptSchema();
+
     const req = {
       text: text,
       instruction:
-        "supported accounts: 'saving', 'credit', 'cheque','check' or 'credit', extract amount or number as amount, extract currency as currency. supported deposit terms: '3 months', '6 months', '1 year', '3 years', extract deposit term as term. ",
-      format: this.template,
+        this.promptStage === "confirmation"
+          ? confirmSchema.instruction
+          : txSchema.instruction,
+      schema:
+        this.promptStage === "confirmation"
+          ? confirmSchema.schema
+          : txSchema.schema,
       language: chatStoreService.language,
     };
 
@@ -172,7 +178,7 @@ export class TimeDepositTxProcessor implements IProcessor {
 
   private findNextStep(): ChatbotAction {
     myLoggerService.log("findNextStep: currentStep: " + this.currentStep);
-
+    this.promptStage = "transaction";
     const nextAction: ChatbotAction = {
       actionType: "ContinueTransaction",
       prompt: [],
@@ -268,26 +274,27 @@ export class TimeDepositTxProcessor implements IProcessor {
       );
       return nextAction;
     }
-    // this.currentStep = 10;
-    // if (
-    //   !chatStoreService.sessionContext!.transactionContext?.customerConfirmed
-    // ) {
-    //   nextAction.prompt = [translate("confirm transaction")];
-    //   nextAction.prompt.push(
-    //     myFormatorService.numberWithCommas(
-    //       chatStoreService.sessionContext!.transactionContext.amount.value.toString()
-    //     ) +
-    //       " " +
-    //       chatStoreService.sessionContext!.transactionContext.amount.currency
-    //   );
-    //   nextAction.prompt.push(
-    //     translate(
-    //       chatStoreService.sessionContext.transactionContext!
-    //         .selectedTimeDepositTerm
-    //     )
-    //   );
-    //   return nextAction;
-    // }
+    this.currentStep = 10;
+    if (
+      !chatStoreService.sessionContext!.transactionContext?.customerConfirmed
+    ) {
+      nextAction.prompt = [translate("confirm transaction")];
+      nextAction.prompt.push(
+        myFormatorService.numberWithCommas(
+          chatStoreService.sessionContext!.transactionContext.amount.value.toString()
+        ) +
+          " " +
+          chatStoreService.sessionContext!.transactionContext.amount.currency
+      );
+      nextAction.prompt.push(
+        translate(
+          chatStoreService.sessionContext.transactionContext!
+            .selectedTimeDepositTerm
+        )
+      );
+      this.promptStage = "confirmation";
+      return nextAction;
+    }
 
     this.currentStep = 11;
     if (!chatStoreService.sessionContext!.transactionContext.executeCompleted) {

@@ -30,6 +30,9 @@ export class ChatStoreService {
   cancelHandler: any = null;
   notification: boolean = false;
   playAudioOnly: boolean = false;
+  supportedDepositCurrencies: string[] = ["HKD", "USD", "CNY"];
+  supportedWithdrawalCurrencies: string[] = ["HKD", "USD", "CNY"];
+  supportedDepositTerms?: string[] = ["3 months", "6 months", "1 year", "3 years"];
   language: string = "en";
   chatbotUrl: string = "";
   sessionContext: ISessionContext = {

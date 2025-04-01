@@ -11,23 +11,22 @@ import {
   IProcessor,
   TransactionName,
 } from "./processor.interface";
+import { getSessionPromptSchema } from "./prompt-schema";
 
 export class SessionProcessor implements IProcessor {
   private started = false;
   private lastStep = -1;
   private currentStep = -1;
-  private template = {
-    transaction: "",
-    cancel: false,
-  };
-  private supportedTransactons?: string[] = [];
+
   constructor() {
     myLoggerService.log("create SessionProcessor");
   }
   async start() {
     myLoggerService.log("SessionProcessor: start");
     const transactionConfig = await fetchJson("/config/transactions.json");
-    this.supportedTransactons = transactionConfig.transactions;
+    chatStoreService.sessionContext.supportedTransactons =
+      transactionConfig.transactions;
+    chatStoreService.sessionContext.accounts = ["debit, credit, cheque, saving"];
     this.lastStep = -1;
     this.currentStep = -1;
     const sessionRes: SessionResponse =
@@ -58,16 +57,11 @@ export class SessionProcessor implements IProcessor {
   async processText(text: string): Promise<ChatbotAction> {
     myLoggerService.log("SessionProcessor: processText:" + text);
 
-    let instruction = "supported transactons: ";
-    this.supportedTransactons!.map((item) => {
-      instruction += item + ",";
-    });
-
-    console.log("instruction", instruction);
+    const promptSchema = getSessionPromptSchema();
     const req = {
       text: text,
-      instruction: instruction,
-      format: this.template,
+      instruction: promptSchema.instruction,
+      schema: promptSchema.schema,
       language: chatStoreService.language,
     };
     const res: ExtractResponse = await myChatbotServiceAgent.extract(

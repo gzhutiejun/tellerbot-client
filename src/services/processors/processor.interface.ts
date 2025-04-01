@@ -14,3 +14,5 @@ export interface IProcessor {
   processAtmMessage(message: any): Promise<ChatbotAction>;
 }
 export type TransactionName ="cash-deposit" | "cash-withdrawal" | "time-deposit" | undefined;
+
+export type PromptType = "transaction" | "confirmation";
