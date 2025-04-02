@@ -191,7 +191,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     this.currentStep = 6;
     if (!chatStoreService.sessionContext!.transactionContext.noteMixPerformed) {
       nextAction.actionType = "AtmInteraction";
-      nextAction.prompt = [translate("please wait")];
+      // nextAction.prompt = [translate("please wait")];
       nextAction.interactionMessage = {
         action: "note-mix",
         parameters: {

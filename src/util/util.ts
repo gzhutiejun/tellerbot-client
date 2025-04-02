@@ -3,6 +3,7 @@
 import { GenerateAudioResponse } from "../services/bus-op.interface";
 import { chatStoreService } from "../services/chat-store.service";
 import { myChatbotServiceAgent } from "../services/chatbot-service-agent";
+import { translate } from "../services/i18n/i18n.service";
 import { myLoggerService } from "../services/logger.service";
 import { CashWithdrawalTxProcessor } from "../services/processors/cash-withdrawal-processor";
 import {
@@ -68,6 +69,10 @@ export function getGreetingWords() {
   return ret;
 }
 
+export function repeat() {
+  const prompt = translate("sorry") + "," + translate("repeat");
+  playAudio([prompt]);
+}
 export async function playAudio(prompts: string[], playMode: boolean = false) {
   myLoggerService.log("playAudio");
   chatStoreService.clearAgentMessages();
@@ -150,3 +155,4 @@ export function extractDepositTerm(term: string, terms: string[]): string {
   }
   return ret;
 }
+

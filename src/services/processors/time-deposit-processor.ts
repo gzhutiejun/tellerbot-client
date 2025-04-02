@@ -187,7 +187,7 @@ export class TimeDepositTxProcessor implements IProcessor {
     this.currentStep = 1;
     if (!chatStoreService.sessionContext!.transactionContext?.selectedAccount) {
       nextAction.prompt = [translate("deposit from account")];
-      nextAction.prompt = [translate("supported accounts") + ":"];
+      nextAction.prompt.push(translate("supported accounts") + ":");
       chatStoreService.sessionContext.accounts?.map((item) => {
         nextAction.prompt?.push(translate(item.toLowerCase()));
       });

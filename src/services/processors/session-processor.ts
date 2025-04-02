@@ -26,7 +26,12 @@ export class SessionProcessor implements IProcessor {
     const transactionConfig = await fetchJson("/config/transactions.json");
     chatStoreService.sessionContext.supportedTransactons =
       transactionConfig.transactions;
-    chatStoreService.sessionContext.accounts = ["Debit, Credit, Cheque, Saving"];
+    chatStoreService.sessionContext.accounts = [
+      "Debit",
+      "Credit",
+      "Cheque",
+      "Saving",
+    ];
     this.lastStep = -1;
     this.currentStep = -1;
     const sessionRes: SessionResponse =
@@ -38,11 +43,13 @@ export class SessionProcessor implements IProcessor {
     if (sessionRes && sessionRes.sessionId) {
       chatStoreService.setSessionId(sessionRes.sessionId);
 
-      const prompts: string[] = [`${translate(getGreetingWords())}, ${translate("first-ask-services")}`];
+      const prompts: string[] = [
+        `${translate(getGreetingWords())}, ${translate("first-ask-services")}`,
+      ];
       prompts.push(translate("supported transactons") + ":");
       chatStoreService.sessionContext.supportedTransactons?.map((item) => {
         prompts.push(translate(item.toLowerCase()));
-      })
+      });
       playAudio(prompts);
     }
   }
@@ -103,10 +110,12 @@ export class SessionProcessor implements IProcessor {
   }
 
   private findNextStep(): ChatbotAction {
-    const prompts: string[] = [`${translate(getGreetingWords())}, ${translate("ask-services")}`];
+    const prompts: string[] = [
+      `${translate(getGreetingWords())}, ${translate("ask-services")}`,
+    ];
     chatStoreService.sessionContext.supportedTransactons?.map((item) => {
       prompts.push(translate(item.toLowerCase()));
-    })
+    });
     const action = {
       actionType: "ContinueSession" as ChatbotActionType,
       prompt: prompts,

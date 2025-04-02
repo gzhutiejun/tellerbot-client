@@ -12,6 +12,7 @@ export default {
     saving: "Saving account",
     cheque: "Cheque account",
     "please wait": "Please wait",
+    "repeat": "I didn't hear clearly, please say it again",
     "transaction progressing": "We are processing your transaction, please wait",
     "ask-services": "What service do you need?",
     "first-ask-services":

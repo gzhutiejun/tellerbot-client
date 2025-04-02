@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createTransactionProcessor, playAudio } from "../util/util";
+import { createTransactionProcessor, playAudio, repeat } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { chatStoreService } from "./chat-store.service";
@@ -189,7 +189,7 @@ export class MainProcessor {
           } else {
             if (!this.currentAction.playAudioOnly) {
               console.log("invalid text, listen again");
-              this.startListening();
+              repeat();
             }
           }
         } else {
@@ -326,7 +326,7 @@ export class MainProcessor {
     this.clearSessionData();
     this.currentAction.actionType = "NewSession";
     this.sessionProcessor = new SessionProcessor();
-    
+
     chatStoreService.chatbotUrl = this.chatbotConnectionOption!.webApiUrl!;
     this.sessionProcessor.start();
   }
@@ -372,6 +372,9 @@ export class MainProcessor {
       this.currentAction.actionType === "EndTransaction"
     ) {
       playAudio(this.currentAction!.prompt!);
+    } else if (this.currentAction.actionType === "AtmInteraction") {
+      if (!chatStoreService.playing) playAudio(this.currentAction!.prompt!);
+      myATMServiceAgent.send(this.currentAction.interactionMessage);
     } else {
       myLoggerService.log(
         "Need handle action:" + JSON.stringify(this.currentAction)
