@@ -58,11 +58,11 @@ export function getGreetingWords() {
   const currentHour = new Date().getHours();
   let ret;
   if (currentHour >= 12 && currentHour <= 17) {
-    ret = "goodAfternoon";
+    ret = "good afternoon";
   } else if (currentHour >= 17) {
-    ret = "goodEvening";
+    ret = "good evening";
   } else {
-    ret = "goodMorning";
+    ret = "good morning";
   }
 
   return ret;
@@ -134,7 +134,7 @@ export function extractCurrency(currency: string): string {
 
 export function extractCancel(data: any): boolean {
   if (!data) return false;
-  if ("string" === typeof data && data.toLocaleLowerCase().includes("true")) return true;
+  if ("string" === typeof data && data.toLowerCase().includes("true")) return true;
   if ("boolean" === typeof data && data) return true;
   return false;
 }

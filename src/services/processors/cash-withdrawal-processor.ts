@@ -11,9 +11,7 @@ import { myChatbotServiceAgent } from "../chatbot-service-agent";
 import { translate } from "../i18n/i18n.service";
 import { myLoggerService } from "../logger.service";
 import { ChatbotAction, IProcessor } from "./processor.interface";
-import {
-  getCashWithdrawalPromptSchema
-} from "./prompt-schema";
+import { getCashWithdrawalPromptSchema } from "./prompt-helper";
 
 export class CashWithdrawalTxProcessor implements IProcessor {
   private lastStep = -1;
@@ -122,23 +120,21 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       console.log("extract error:", e);
     }
 
-    const action: ChatbotAction = this.findNextStep();
+    const nextAction: ChatbotAction = this.findNextStep();
     myLoggerService.log(
       "nextAction: " +
-        JSON.stringify(action) +
+        JSON.stringify(nextAction) +
         " currentStep:" +
         this.currentStep
     );
 
-    if (
-      action.actionType === "ContinueTransaction" &&
-      this.currentStep === this.lastStep
-    ) {
-      action.playAudioOnly = true;
+    if (nextAction.actionType === "AtmInteraction") {
+      chatStoreService.setPlayAudioOnly(true);
+    } else {
+      chatStoreService.setPlayAudioOnly(false);
     }
-    this.lastStep = this.currentStep;
 
-    return action;
+    return nextAction;
   }
 
   private findNextStep(): ChatbotAction {
@@ -152,7 +148,13 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     //step 1
     this.currentStep = 1;
     if (!chatStoreService.sessionContext!.transactionContext?.selectedAccount) {
-      nextAction.prompt = [translate("cashWithdrawal_Account")];
+      nextAction.prompt = [translate("cash withdrawal account")];
+      nextAction.prompt.push(translate("supported accounts") + ":");
+      console.log(chatStoreService.sessionContext.accounts);
+      chatStoreService.sessionContext.accounts?.map((item) => {
+        console.log(item);
+        nextAction.prompt?.push(translate(item.toLowerCase()));
+      });
       return nextAction;
     }
 
@@ -163,21 +165,25 @@ export class CashWithdrawalTxProcessor implements IProcessor {
       !chatStoreService.sessionContext!.transactionContext?.amount.currency ||
       !chatStoreService.sessionContext!.transactionContext?.amount.value
     ) {
-      nextAction.prompt = [translate("cashWithdrawal_Currency_Amount")];
+      nextAction.prompt = [translate("cash withdrawal currency amount")];
+      nextAction.prompt.push(translate("supported currencies") + ":");
+      chatStoreService.supportedWithdrawalCurrencies?.map((item) => {
+        nextAction.prompt?.push(translate(item.toLowerCase()));
+      });
       return nextAction;
     }
 
     //step 4
     this.currentStep = 4;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
-      nextAction.prompt = [translate("cashWithdrawal_Currency")];
+      nextAction.prompt = [translate("cash withdrawal currency")];
       return nextAction;
     }
 
     //step 5
     this.currentStep = 5;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.value) {
-      nextAction.prompt = [translate("cashWithdrawal_Amount")];
+      nextAction.prompt = [translate("cash withdrawal amount")];
       return nextAction;
     }
 
@@ -185,7 +191,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     this.currentStep = 6;
     if (!chatStoreService.sessionContext!.transactionContext.noteMixPerformed) {
       nextAction.actionType = "AtmInteraction";
-      nextAction.prompt = [translate("pleaseWait")];
+      nextAction.prompt = [translate("please wait")];
       nextAction.interactionMessage = {
         action: "note-mix",
         parameters: {
@@ -203,7 +209,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
     this.currentStep = 7;
     if (!chatStoreService.sessionContext!.transactionContext.executeCompleted) {
       nextAction.actionType = "AtmInteraction";
-      nextAction.prompt = [translate("pleaseWait")];
+      nextAction.prompt = [translate("transaction progressing")];
       nextAction.interactionMessage = {
         action: "cash-withdrawal",
         parameters: {

@@ -16,7 +16,7 @@ import { ChatbotAction, IProcessor, PromptType } from "./processor.interface";
 import {
   getConfirmationPromptSchema,
   getTimeDepositPromptSchema,
-} from "./prompt-schema";
+} from "./prompt-helper";
 
 export class TimeDepositTxProcessor implements IProcessor {
   private lastStep = -1;
@@ -186,14 +186,18 @@ export class TimeDepositTxProcessor implements IProcessor {
 
     this.currentStep = 1;
     if (!chatStoreService.sessionContext!.transactionContext?.selectedAccount) {
-      nextAction.prompt = [translate("deposit_from_Account")];
+      nextAction.prompt = [translate("deposit from account")];
+      nextAction.prompt = [translate("supported accounts") + ":"];
+      chatStoreService.sessionContext.accounts?.map((item) => {
+        nextAction.prompt?.push(translate(item.toLowerCase()));
+      });
       return nextAction;
     }
 
     this.currentStep = 2;
     if (!chatStoreService.sessionContext!.transactionContext.balanceAmounts) {
       nextAction.actionType = "AtmInteraction";
-      nextAction.prompt = [translate("pleaseWait")];
+      nextAction.prompt = [translate("please wait")];
       nextAction.interactionMessage = {
         action: "retrieve-balance-amounts",
         parameters: {
@@ -210,7 +214,7 @@ export class TimeDepositTxProcessor implements IProcessor {
       !chatStoreService.sessionContext!.transactionContext?.amount.currency ||
       !chatStoreService.sessionContext!.transactionContext?.amount.value
     ) {
-      nextAction.prompt = [translate("deposit_Currency_Amount")];
+      nextAction.prompt = [translate("deposit currency amount")];
       nextAction.prompt.push(translate("balance amounts"));
       console.log(
         chatStoreService.sessionContext!.transactionContext!.balanceAmounts
@@ -231,13 +235,17 @@ export class TimeDepositTxProcessor implements IProcessor {
 
     this.currentStep = 5;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
-      nextAction.prompt = [translate("deposit_Currency")];
+      nextAction.prompt = [translate("deposit currency")];
+      nextAction.prompt.push(translate("supported currencies") + ":");
+      chatStoreService.supportedDepositTerms?.map((item) => {
+        nextAction.prompt?.push(translate(item.toLowerCase()));
+      });
       return nextAction;
     }
 
     this.currentStep = 6;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.value) {
-      nextAction.prompt = [translate("deposit_Amount")];
+      nextAction.prompt = [translate("deposit amount")];
       return nextAction;
     }
 
@@ -252,7 +260,7 @@ export class TimeDepositTxProcessor implements IProcessor {
 
     this.currentStep = 8;
     if (!chatStoreService.sessionContext!.transactionContext?.amount.currency) {
-      nextAction.prompt = [translate("deposit_Currency")];
+      nextAction.prompt = [translate("deposit currency")];
       return nextAction;
     }
 
@@ -261,7 +269,7 @@ export class TimeDepositTxProcessor implements IProcessor {
       !chatStoreService.sessionContext!.transactionContext
         ?.selectedTimeDepositTerm
     ) {
-      nextAction.prompt = [translate("deposit_Term_Interest")];
+      nextAction.prompt = [translate("deposit term interest")];
       nextAction.prompt.push(
         translate("deposit term") + " " + translate("interest")
       );
@@ -299,6 +307,7 @@ export class TimeDepositTxProcessor implements IProcessor {
     this.currentStep = 11;
     if (!chatStoreService.sessionContext!.transactionContext.executeCompleted) {
       nextAction.actionType = "AtmInteraction";
+      nextAction.prompt = [translate("transaction progressing")];
       nextAction.interactionMessage = {
         action: "time-deposit",
         parameters: {
