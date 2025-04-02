@@ -3,7 +3,10 @@
 import { GenerateAudioResponse } from "../services/bus-op.interface";
 import { chatStoreService } from "../services/chat-store.service";
 import { myChatbotServiceAgent } from "../services/chatbot-service-agent";
-import { translate } from "../services/i18n/i18n.service";
+import {
+  setTranslationLanguage,
+  translate,
+} from "../services/i18n/i18n.service";
 import { myLoggerService } from "../services/logger.service";
 import { CashWithdrawalTxProcessor } from "../services/processors/cash-withdrawal-processor";
 import {
@@ -132,21 +135,27 @@ export function extractCurrency(currency: string): string {
   const curr = currency.toLowerCase();
   if (curr.includes("hk") || curr.includes("hong kong")) return "HKD";
   if (curr.includes("us")) return "USD";
-  if (curr.includes("tw") || curr.includes("tai wan") || curr.includes("taiwan")) return "TWD";
+  if (
+    curr.includes("tw") ||
+    curr.includes("tai wan") ||
+    curr.includes("taiwan")
+  )
+    return "TWD";
   if (curr.includes("eur") || curr.includes("europe")) return "EUR";
   return "";
 }
 
 export function extractCancel(data: any): boolean {
   if (!data) return false;
-  if ("string" === typeof data && data.toLowerCase().includes("true")) return true;
+  if ("string" === typeof data && data.toLowerCase().includes("true"))
+    return true;
   if ("boolean" === typeof data && data) return true;
   return false;
 }
 
 export function extractDepositTerm(term: string, terms: string[]): string {
   if (!term) return "";
-  let ret:string = "";
+  let ret: string = "";
   for (let i = 0; i < terms.length; i++) {
     if (term.toLowerCase().includes(terms[i])) {
       ret = terms[i];
@@ -156,3 +165,7 @@ export function extractDepositTerm(term: string, terms: string[]): string {
   return ret;
 }
 
+export function setLanguage(lang: string) {
+  chatStoreService.setLanguage(lang);
+  setTranslationLanguage(lang);
+}

@@ -17,7 +17,7 @@ i18n.use(initReactI18next).init({
   },
 });
 
-export function setLanguage(lang: string) {
+export function setTranslationLanguage(lang: string) {
   i18n.changeLanguage(lang);
 }
 export function translate(key: string, dynamicData = {}) {

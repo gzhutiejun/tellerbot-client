@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createTransactionProcessor, playAudio, repeat } from "../util/util";
+import { createTransactionProcessor, playAudio, repeat, setLanguage } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { chatStoreService } from "./chat-store.service";
@@ -49,8 +49,7 @@ export class MainProcessor {
   async init(atmUrl: string, chatbotUrl: string) {
     myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
     chatStoreService.resetSessionContext();
-    chatStoreService.setLanguage("zh-CN");
-    // setLanguage(chatStoreService.language);
+    setLanguage("en");
     this.atmConnectionOption = {
       wsUrl: atmUrl,
     };
