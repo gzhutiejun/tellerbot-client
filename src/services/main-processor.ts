@@ -49,7 +49,7 @@ export class MainProcessor {
   async init(atmUrl: string, chatbotUrl: string) {
     myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
     chatStoreService.resetSessionContext();
-    setLanguage("en");
+    setLanguage("zh-CN");
     this.atmConnectionOption = {
       wsUrl: atmUrl,
     };

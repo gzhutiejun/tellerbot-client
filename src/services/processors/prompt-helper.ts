@@ -23,8 +23,7 @@ export function getCashWithdrawalPromptSchema(): IPromptSchema {
   chatStoreService.sessionContext!.accounts!.map((item) => {
     accounts += item.toLowerCase() + ",";
   });
-  accounts += "checking";
-  
+
   let currencies = "";
   chatStoreService.supportedWithdrawalCurrencies!.map((item) => {
     currencies += item + ",";
