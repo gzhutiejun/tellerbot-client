@@ -14,6 +14,7 @@ export interface ExtractResponse extends BusOpResponse {
 
 export interface TranscribeResponse extends BusOpResponse {
   transcript?: string;
+  language?: string;
 }
 
 export interface GenerateAudioResponse extends BusOpResponse {

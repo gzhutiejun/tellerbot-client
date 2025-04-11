@@ -166,6 +166,8 @@ export function extractDepositTerm(term: string, terms: string[]): string {
 }
 
 export function setLanguage(lang: string) {
+  myLoggerService.log("set language:" + lang);
+  if (lang === "zh") lang = "zh-CN";
   chatStoreService.setLanguage(lang);
   setTranslationLanguage(lang);
 }

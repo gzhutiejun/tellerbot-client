@@ -29,7 +29,7 @@ export function getCashWithdrawalPromptSchema(): IPromptSchema {
     currencies += item + ",";
   });
 
-  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}), extract cancel (e.g. cancel, exit, no need)`;
+  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}, check, checking), extract cancel (e.g. cancel, exit, no need)`;
 
   return {
     instruction: instruction,
@@ -58,7 +58,7 @@ export function getTimeDepositPromptSchema(): IPromptSchema {
     currencies += item + ",";
   });
 
-  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}), extract term (e.g. ${terms}), extract cancel (e.g. cancel, exit, no need)`;
+  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}, check, checking), extract term (e.g. ${terms}), extract cancel (e.g. cancel, exit, no need)`;
 
   return {
     instruction: instruction,

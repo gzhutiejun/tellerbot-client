@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "../../util/ajax";
-import { extractCancel, getGreetingWords, playAudio } from "../../util/util";
+import { extractCancel, getGreetingWords, playAudio, setLanguage } from "../../util/util";
 import { ExtractResponse, SessionResponse } from "../bus-op.interface";
 import { ChatbotActionType, chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
@@ -17,12 +17,13 @@ export class SessionProcessor implements IProcessor {
   private started = false;
   private lastStep = -1;
   private currentStep = -1;
-
+  private defaultLanguage = "zh-CN";
   constructor() {
     myLoggerService.log("create SessionProcessor");
   }
   async start() {
     myLoggerService.log("SessionProcessor: start");
+    setLanguage(this.defaultLanguage);
     const transactionConfig = await fetchJson("/config/transactions.json");
     chatStoreService.sessionContext.supportedTransactons =
       transactionConfig.transactions;

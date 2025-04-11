@@ -49,7 +49,7 @@ export class MainProcessor {
   async init(atmUrl: string, chatbotUrl: string) {
     myLoggerService.log(`atmUrl ${atmUrl} chatbotUrl ${chatbotUrl}`);
     chatStoreService.resetSessionContext();
-    setLanguage("zh-CN");
+
     this.atmConnectionOption = {
       wsUrl: atmUrl,
     };
@@ -181,6 +181,8 @@ export class MainProcessor {
           myLoggerService.log("transcribe start");
           const transcribeResult: TranscribeResponse =
             await myChatbotServiceAgent?.transcribe(JSON.stringify(data));
+          
+          setLanguage(transcribeResult.language!);
           chatStoreService.setStatus("");
           myLoggerService.log("transcribe complete");
           if (transcribeResult && transcribeResult.transcript) {
@@ -207,6 +209,8 @@ export class MainProcessor {
    * stopRecording, when customer complete a sentence, stop recording.
    */
   stopRecording() {
+    console.log("listenTimer", this.listenTimer);
+    if (this.listenTimer > 0) window.clearTimeout(this.listenTimer);
     myLoggerService.log("stopRecording: " + this.mediaRecorder?.state);
     chatStoreService.setStatus("");
     chatStoreService.setMic(false);
@@ -244,7 +248,7 @@ export class MainProcessor {
       if (!this.silenceStart) {
         this.silenceStart = Date.now();
       } else if (Date.now() - this.silenceStart >= this.silenceTimeout) {
-        window.clearTimeout(this.listenTimer);
+        myLoggerService.log("silence timeout");
         this.stopRecording();
 
         return;
