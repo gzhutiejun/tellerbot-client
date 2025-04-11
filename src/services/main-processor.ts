@@ -182,7 +182,6 @@ export class MainProcessor {
           const transcribeResult: TranscribeResponse =
             await myChatbotServiceAgent?.transcribe(JSON.stringify(data));
           
-          setLanguage(transcribeResult.language!);
           chatStoreService.setStatus("");
           myLoggerService.log("transcribe complete");
           if (transcribeResult && transcribeResult.transcript) {

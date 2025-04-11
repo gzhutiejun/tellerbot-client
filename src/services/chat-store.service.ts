@@ -72,6 +72,7 @@ export class ChatStoreService {
   }
 
   setLanguage(lang: string) {
+    myLoggerService.log("chatStoreService:setLanguage:" + lang)
     this.language = lang;
   }
   increaseRepeatCount() {
