@@ -38,13 +38,16 @@ export class ChatStoreService {
   sessionContext: ISessionContext = {
     sessionId: "",
   };
-
+  customerAudioUrl ="";
   repeatCount = 0;
   constructor() {
     makeAutoObservable(this);
   }
   setPlayAudioOnly(playModeOnly: boolean) {
     this.playAudioOnly = playModeOnly;
+  }
+  setCustomerAudioUrl(url:string) {
+    this.customerAudioUrl = url;
   }
   setCustomerMessage(message: string) {
     this.customerMessage = message;

@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchJson } from "../../util/ajax";
-import { extractCancel, getGreetingWords, playAudio, setLanguage } from "../../util/util";
+import {
+  extractCancel,
+  getGreetingWords,
+  playAudio,
+  setLanguage,
+} from "../../util/util";
 import { ExtractResponse, SessionResponse } from "../bus-op.interface";
 import { ChatbotActionType, chatStoreService } from "../chat-store.service";
 import { myChatbotServiceAgent } from "../chatbot-service-agent";
@@ -14,7 +19,6 @@ import {
 import { getSessionPromptSchema } from "./prompt-helper";
 
 export class SessionProcessor implements IProcessor {
-  private started = false;
   private lastStep = -1;
   private currentStep = -1;
   private defaultLanguage = "zh-CN";
@@ -86,11 +90,12 @@ export class SessionProcessor implements IProcessor {
             actionType: "Cancel",
           };
         }
-
+        const tx = this.identifyTransactionName(
+          txData.transaction
+        ) as TransactionName;
+        myLoggerService.log(`input: ${txData.transaction} output: ${tx}`);
         chatStoreService.sessionContext!.transactionContext = {
-          currentTransaction: this.identifyTransactionName(
-            txData.transaction
-          ) as TransactionName,
+          currentTransaction: tx,
         };
       }
     } catch (e) {
@@ -126,10 +131,7 @@ export class SessionProcessor implements IProcessor {
     if (
       chatStoreService.sessionContext.transactionContext?.currentTransaction
     ) {
-      if (!this.started) {
-        action.actionType = "NewTransaction" as ChatbotActionType;
-        this.started = true;
-      }
+      action.actionType = "NewTransaction" as ChatbotActionType;
     }
     return action;
   }

@@ -157,6 +157,7 @@ export class MainProcessor {
       if (this.audioChunks.length > 0) {
         const audioBlob = new Blob(this.audioChunks);
         // const audioUrl = URL.createObjectURL(audioBlob);
+        // chatStoreService.setCustomerAudioUrl(audioUrl);
         // const audio = new Audio(audioUrl);
         // audio.play();
         this.audioChunks = [];
@@ -387,7 +388,6 @@ export class MainProcessor {
   private async process(message: string | object) {
     const user_text = typeof message === "string" ? message : undefined;
     const atmMessage = typeof message === "object" ? message : undefined;
-    myLoggerService.log(`process: ${user_text} ${user_text}`);
 
     if (!chatStoreService.sessionContext.sessionId) return;
 
@@ -407,6 +407,7 @@ export class MainProcessor {
         break;
       case "NewSession":
       case "ContinueSession":
+        myLoggerService.log(`process: ${user_text}`);
         this.currentAction = await this.sessionProcessor!.processText(
           user_text || ""
         )!;
