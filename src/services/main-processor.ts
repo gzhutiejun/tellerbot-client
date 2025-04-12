@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createTransactionProcessor, playAudio, repeat, setLanguage } from "../util/util";
+import {
+  createTransactionProcessor,
+  playAudio,
+  repeat,
+  setLanguage,
+} from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { chatStoreService } from "./chat-store.service";
@@ -14,12 +19,15 @@ import {
 } from "./processors/processor.interface";
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
-
+import RecordRTC, {
+  RecordRTCPromisesHandler,
+  StereoAudioRecorder,
+} from "recordrtc";
 export class MainProcessor {
   private mediaStream?: MediaStream;
-  private mediaRecorder?: MediaRecorder;
+  private mediaRecorder!: any;
   private audioChunks: Blob[] = [];
-  private debugMode = false;
+  private debugMode = true;
   private atmConnectionOption?: ConnectionOptions;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
@@ -30,7 +38,7 @@ export class MainProcessor {
   private silenceTimer: number = 0;
   private silenceStart?: number = undefined;
   private silenceThreshold = -35;
-  private silenceTimeout = 3000;
+  private silenceTimeout = 2000;
   private lastAudioPath = "";
   private maxListenTime = 20000;
   private listenTimer: number = 0;
@@ -91,6 +99,29 @@ export class MainProcessor {
     }
   }
 
+  private captureMicrophone(callback: any) {
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(callback)
+      .catch(function (error) {
+        alert("Unable to access your microphone.");
+        console.error(error);
+      });
+  }
+
+  stopRecordingCallback = () => {
+    if (!this.mediaRecorder) return;
+    const blob = this.mediaRecorder.getBlob();
+    this.recognize(blob);
+    const audioUrl = URL.createObjectURL(blob);
+    chatStoreService.setUserAudioUrl(audioUrl);
+    this.mediaRecorder.microphone.stop();
+  }
+
+  private async recognize(audioBlob: Blob) {
+    console.log("recognize");
+  }
+
   /**
    * startRecording, it enable microphone and start recording
    * when customer voice is recorded, upload the audio file to service for further processing.
@@ -101,50 +132,46 @@ export class MainProcessor {
     this.audioChunks = [];
 
     this.mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        channelCount: 1,
-        sampleRate: 64000,
-        sampleSize: 22272,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
+      audio: true,
     });
 
     chatStoreService.setStatus("Listening...");
     chatStoreService.setMic(true);
 
-    this.listenTimer = window.setTimeout(() => {
-      this.stopRecording();
-    }, this.maxListenTime);
+    // this.listenTimer = window.setTimeout(() => {
+    //   // this.stopRecording();
+    // }, this.silenceTimeout);
 
-    if (this.mediaStream) {
-      myLoggerService.log("mediaStream created");
-      this.mediaRecorder = new MediaRecorder(this.mediaStream);
-    } else {
-      myLoggerService.log("mediaStream is not created");
-      return;
-    }
+    this.captureMicrophone((microphone: any) => {
+      this.mediaRecorder = new RecordRTC(microphone, {
+        type: "audio",
+        recorderType: StereoAudioRecorder,
+        desiredSampRate: 16000,
+        numberOfAudioChannels: 1,
+      });
+
+      this.mediaRecorder.startRecording();
+      const speechEvents = (window as any).injectAudio(microphone, {});
+
+      speechEvents.on("speaking", () => {
+        if (this.mediaRecorder?.getBlob()) return;
+        clearTimeout(this.silenceTimeout);
+      });
+
+      speechEvents.on("stopped_speaking", () => {
+        if (this.mediaRecorder.getBlob()) return;
+        this.listenTimer = setTimeout(() => {
+          this.mediaRecorder.stopRecording(this.stopRecordingCallback);
+        }, this.silenceTimeout) as any;
+      });
+      // release microphone on stopRecording
+      this.mediaRecorder.microphone = microphone;
+    });
 
     if (!this.mediaRecorder) {
       myLoggerService.log("mediaRecorder is not created");
       return;
     }
-
-    this.audioContext = new AudioContext();
-    this.analyser = this.audioContext.createAnalyser();
-    this.analyser.fftSize = 2048;
-    const source = this.audioContext.createMediaStreamSource(this.mediaStream);
-    source.connect(this.analyser);
-
-    /**
-     * ondataavailable event handler, save customer audio data to a buffer.
-     */
-    this.mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        this.audioChunks.push(event.data);
-      }
-    };
 
     /**
      * onstop handler, collect customer audio data and upload to server
@@ -182,7 +209,7 @@ export class MainProcessor {
           myLoggerService.log("transcribe start");
           const transcribeResult: TranscribeResponse =
             await myChatbotServiceAgent?.transcribe(JSON.stringify(data));
-          
+
           chatStoreService.setStatus("");
           myLoggerService.log("transcribe complete");
           if (transcribeResult && transcribeResult.transcript) {
@@ -199,68 +226,11 @@ export class MainProcessor {
       }
     };
 
-    this.mediaRecorder?.start(100); // interval for trigger ondataavailable event
-    setTimeout(() => {
-      this.startSilenceDetection();
-    }, 2000);
+    // this.mediaRecorder?.start(100); // interval for trigger ondataavailable event
+    // setTimeout(() => {
+    //   this.startSilenceDetection();
+    // }, 2000);
   }
-
-  /**
-   * stopRecording, when customer complete a sentence, stop recording.
-   */
-  stopRecording() {
-    console.log("listenTimer", this.listenTimer);
-    if (this.listenTimer > 0) window.clearTimeout(this.listenTimer);
-    myLoggerService.log("stopRecording: " + this.mediaRecorder?.state);
-    chatStoreService.setStatus("");
-    chatStoreService.setMic(false);
-    if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
-      this.mediaRecorder.stop();
-      this.mediaRecorder.stream.getTracks().forEach((track) => track.stop());
-    }
-    if (this.silenceTimer) {
-      clearTimeout(this.silenceTimer);
-      this.silenceTimer = 0;
-    }
-  }
-
-  private startSilenceDetection() {
-    myLoggerService.log("startSilenceDetection");
-    this.bufferLength = this.analyser!.frequencyBinCount;
-    this.dataArray = new Float32Array(this.bufferLength);
-    this.silenceStart = undefined;
-
-    this.checkSilence();
-  }
-
-  private checkSilence = () => {
-    if (!this.mediaRecorder || this.mediaRecorder.state !== "recording") return;
-
-    this.analyser!.getFloatTimeDomainData(this.dataArray!);
-    let maxVolume = -Infinity;
-    for (let i = 0; i < this.bufferLength; i++) {
-      maxVolume = Math.max(maxVolume, Math.abs(this.dataArray![i]));
-    }
-
-    const volume = 20 * Math.log10(maxVolume);
-    // console.log("volume, silenceThreshold, silenceStart", volume, this.silenceThreshold, this.silenceStart);
-    if (volume < this.silenceThreshold) {
-      if (!this.silenceStart) {
-        this.silenceStart = Date.now();
-      } else if (Date.now() - this.silenceStart >= this.silenceTimeout) {
-        myLoggerService.log("silence timeout");
-        this.stopRecording();
-
-        return;
-      }
-    } else {
-      this.silenceStart = undefined;
-    }
-
-    setTimeout(() => {
-      this.checkSilence();
-    }, 100);
-  };
 
   private cancelHandler = () => {
     try {
@@ -292,7 +262,7 @@ export class MainProcessor {
           break;
         case "close-session":
           this.clearSessionData();
-          this.stopRecording();
+          this.stopRecordingCallback();
           myChatbotServiceAgent?.closesession(
             JSON.stringify({
               session_id: chatStoreService.sessionContext.sessionId,
@@ -360,7 +330,7 @@ export class MainProcessor {
     }
 
     if (this.currentAction.actionType === "Cancel") {
-      this.stopRecording();
+      this.stopRecordingCallback();
       myChatbotServiceAgent?.closesession(
         JSON.stringify({
           session_id: chatStoreService.sessionContext.sessionId,

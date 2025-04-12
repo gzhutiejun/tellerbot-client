@@ -40,8 +40,12 @@ export class ChatStoreService {
   };
   customerAudioUrl ="";
   repeatCount = 0;
+  userAudioUrl = "";
   constructor() {
     makeAutoObservable(this);
+  }
+  setUserAudioUrl(url: string) {
+    this.userAudioUrl = url;
   }
   setPlayAudioOnly(playModeOnly: boolean) {
     this.playAudioOnly = playModeOnly;
