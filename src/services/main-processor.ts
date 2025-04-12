@@ -10,7 +10,8 @@ import { myLoggerService } from "./logger.service";
 import { ChatbotAction, IProcessor, TransactionName } from "./processors/processor.interface";
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
-import * as _ from "recordrtc";
+import RecordRTC from "recordrtc";
+window.RecordRTC = RecordRTC;
 export class MainProcessor {
   private mediaStream?: MediaStream;
   private audioChunks: Blob[] = [];
