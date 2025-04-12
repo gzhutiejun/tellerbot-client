@@ -1,31 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-  createTransactionProcessor,
-  playAudio,
-  repeat,
-  setLanguage,
-} from "../util/util";
+import { createTransactionProcessor, playAudio, repeat, setLanguage } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { chatStoreService } from "./chat-store.service";
 import { myChatbotServiceAgent } from "./chatbot-service-agent";
 import { myLoggerService } from "./logger.service";
-import {
-  ChatbotAction,
-  IProcessor,
-  TransactionName,
-} from "./processors/processor.interface";
+import { ChatbotAction, IProcessor, TransactionName } from "./processors/processor.interface";
 import { SessionProcessor } from "./processors/session-processor";
 import { ConnectionOptions } from "./websocket";
-import RecordRTC, {
-  RecordRTCPromisesHandler,
-  StereoAudioRecorder,
-} from "recordrtc";
+import * as _ from "recordrtc";
 export class MainProcessor {
   private mediaStream?: MediaStream;
-  private mediaRecorder!: any;
   private audioChunks: Blob[] = [];
   private debugMode = true;
   private atmConnectionOption?: ConnectionOptions;
@@ -42,7 +29,8 @@ export class MainProcessor {
   private lastAudioPath = "";
   private maxListenTime = 20000;
   private listenTimer: number = 0;
-
+  private stopMicrophone?: () => void;
+  private canceled = false;
   currentAction: ChatbotAction = {
     actionType: "None",
   };
@@ -99,24 +87,12 @@ export class MainProcessor {
     }
   }
 
-  private captureMicrophone(callback: any) {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(callback)
-      .catch(function (error) {
-        alert("Unable to access your microphone.");
-        console.error(error);
-      });
-  }
-
-  stopRecordingCallback = () => {
-    if (!this.mediaRecorder) return;
-    const blob = this.mediaRecorder.getBlob();
+  stopRecordingCallback = (blob: Blob) => {
+    if (this.canceled) return;
     this.recognize(blob);
     const audioUrl = URL.createObjectURL(blob);
     chatStoreService.setUserAudioUrl(audioUrl);
-    this.mediaRecorder.microphone.stop();
-  }
+  };
 
   private async recognize(audioBlob: Blob) {
     console.log("recognize");
@@ -129,109 +105,11 @@ export class MainProcessor {
    */
   async startRecording() {
     myLoggerService.log("startRecording");
-    this.audioChunks = [];
-
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
 
     chatStoreService.setStatus("Listening...");
     chatStoreService.setMic(true);
-
-    // this.listenTimer = window.setTimeout(() => {
-    //   // this.stopRecording();
-    // }, this.silenceTimeout);
-
-    this.captureMicrophone((microphone: any) => {
-      this.mediaRecorder = new RecordRTC(microphone, {
-        type: "audio",
-        recorderType: StereoAudioRecorder,
-        desiredSampRate: 16000,
-        numberOfAudioChannels: 1,
-      });
-
-      this.mediaRecorder.startRecording();
-      const speechEvents = (window as any).injectAudio(microphone, {});
-
-      speechEvents.on("speaking", () => {
-        if (this.mediaRecorder?.getBlob()) return;
-        clearTimeout(this.silenceTimeout);
-      });
-
-      speechEvents.on("stopped_speaking", () => {
-        if (this.mediaRecorder.getBlob()) return;
-        this.listenTimer = setTimeout(() => {
-          this.mediaRecorder.stopRecording(this.stopRecordingCallback);
-        }, this.silenceTimeout) as any;
-      });
-      // release microphone on stopRecording
-      this.mediaRecorder.microphone = microphone;
-    });
-
-    if (!this.mediaRecorder) {
-      myLoggerService.log("mediaRecorder is not created");
-      return;
-    }
-
-    /**
-     * onstop handler, collect customer audio data and upload to server
-     */
-    this.mediaRecorder.onstop = async () => {
-      myLoggerService.log("audioChunk size:" + this.audioChunks.length);
-
-      if (!chatStoreService.sessionContext!.sessionId) return;
-
-      if (this.audioChunks.length > 0) {
-        const audioBlob = new Blob(this.audioChunks);
-        // const audioUrl = URL.createObjectURL(audioBlob);
-        // chatStoreService.setCustomerAudioUrl(audioUrl);
-        // const audio = new Audio(audioUrl);
-        // audio.play();
-        this.audioChunks = [];
-
-        const formData = new FormData();
-        formData.append("file", audioBlob);
-        chatStoreService.setStatus("Thinking...");
-        myLoggerService.log("upload audio file");
-        const uploadResult: UpdateFileResponse =
-          await myChatbotServiceAgent?.upload(formData);
-
-        if (uploadResult && uploadResult.filePath) {
-          this.lastAudioPath = uploadResult.filePath;
-          myLoggerService.log("uploaded file:" + this.lastAudioPath);
-
-          const data = {
-            session_id: chatStoreService.sessionContext.sessionId,
-            file_path: this.lastAudioPath,
-            language: chatStoreService.language,
-          };
-
-          myLoggerService.log("transcribe start");
-          const transcribeResult: TranscribeResponse =
-            await myChatbotServiceAgent?.transcribe(JSON.stringify(data));
-
-          chatStoreService.setStatus("");
-          myLoggerService.log("transcribe complete");
-          if (transcribeResult && transcribeResult.transcript) {
-            this.process(transcribeResult.transcript);
-          } else {
-            if (!this.currentAction.playAudioOnly) {
-              console.log("invalid text, listen again");
-              repeat();
-            }
-          }
-        } else {
-          myLoggerService.log("upload file failed");
-        }
-      }
-    };
-
-    // this.mediaRecorder?.start(100); // interval for trigger ondataavailable event
-    // setTimeout(() => {
-    //   this.startSilenceDetection();
-    // }, 2000);
+    this.stopMicrophone = window.createAudioRecorder(2000, this.stopRecordingCallback);
   }
-
   private cancelHandler = () => {
     try {
       myATMServiceAgent?.send({
@@ -248,7 +126,6 @@ export class MainProcessor {
 
     chatStoreService.resetSessionContext();
   };
-
   private atmMessageHandler = (message: string) => {
     myLoggerService.log("message received from ATM: " + message);
     const atmMessage = JSON.parse(message);
@@ -261,8 +138,9 @@ export class MainProcessor {
           this.process(atmMessage);
           break;
         case "close-session":
+          this.canceled = true;
           this.clearSessionData();
-          this.stopRecordingCallback();
+          this.stopMicrophone?.();
           myChatbotServiceAgent?.closesession(
             JSON.stringify({
               session_id: chatStoreService.sessionContext.sessionId,
@@ -308,9 +186,7 @@ export class MainProcessor {
       this.anotherTransacton();
       return;
     }
-    myLoggerService.log(
-      "startListening, notification:" + chatStoreService.notification
-    );
+    myLoggerService.log("startListening, notification:" + chatStoreService.notification);
     if (chatStoreService.notification) return;
     myLoggerService.log("startListening");
     chatStoreService.setCustomerMessage("");
@@ -320,17 +196,14 @@ export class MainProcessor {
   private async processATMMessage(atmMessage: any) {
     myLoggerService.log("processATMMessage");
     if (this.transactionProcessor) {
-      this.currentAction = await this.transactionProcessor.processAtmMessage(
-        atmMessage
-      );
+      this.currentAction = await this.transactionProcessor.processAtmMessage(atmMessage);
     } else {
-      this.currentAction = await this.sessionProcessor!.processAtmMessage(
-        atmMessage
-      );
+      this.currentAction = await this.sessionProcessor!.processAtmMessage(atmMessage);
     }
 
     if (this.currentAction.actionType === "Cancel") {
-      this.stopRecordingCallback();
+      this.canceled = true;
+      this.stopMicrophone?.();
       myChatbotServiceAgent?.closesession(
         JSON.stringify({
           session_id: chatStoreService.sessionContext.sessionId,
@@ -349,9 +222,7 @@ export class MainProcessor {
       if (!chatStoreService.playing) playAudio(this.currentAction!.prompt!);
       myATMServiceAgent.send(this.currentAction.interactionMessage);
     } else {
-      myLoggerService.log(
-        "Need handle action:" + JSON.stringify(this.currentAction)
-      );
+      myLoggerService.log("Need handle action:" + JSON.stringify(this.currentAction));
     }
     return;
   }
@@ -368,9 +239,7 @@ export class MainProcessor {
       return;
     }
 
-    myLoggerService.log(
-      "processTranscript currentAction1:" + JSON.stringify(this.currentAction)
-    );
+    myLoggerService.log("processTranscript currentAction1:" + JSON.stringify(this.currentAction));
 
     switch (this.currentAction.actionType!) {
       case "None":
@@ -378,12 +247,8 @@ export class MainProcessor {
       case "NewSession":
       case "ContinueSession":
         myLoggerService.log(`process: ${user_text}`);
-        this.currentAction = await this.sessionProcessor!.processText(
-          user_text || ""
-        )!;
-        myLoggerService.log(
-          "process currentAction2:" + JSON.stringify(this.currentAction)
-        );
+        this.currentAction = await this.sessionProcessor!.processText(user_text || "")!;
+        myLoggerService.log("process currentAction2:" + JSON.stringify(this.currentAction));
 
         if (this.currentAction.actionType === "Cancel") {
           this.cancelHandler();
@@ -392,8 +257,7 @@ export class MainProcessor {
           playAudio(this.currentAction!.prompt!);
         } else if (this.currentAction.actionType === "NewTransaction") {
           this.transactionProcessor = createTransactionProcessor(
-            chatStoreService.sessionContext!.transactionContext!
-              .currentTransaction! as TransactionName
+            chatStoreService.sessionContext!.transactionContext!.currentTransaction! as TransactionName
           );
           this.currentAction = {
             actionType: "ContinueTransaction",
@@ -405,12 +269,8 @@ export class MainProcessor {
         this.cancelHandler();
         break;
       case "ContinueTransaction":
-        this.currentAction = await this.transactionProcessor!.processText(
-          user_text || ""
-        )!;
-        myLoggerService.log(
-          "process currentAction3:" + JSON.stringify(this.currentAction)
-        );
+        this.currentAction = await this.transactionProcessor!.processText(user_text || "")!;
+        myLoggerService.log("process currentAction3:" + JSON.stringify(this.currentAction));
 
         // playAudio(this.currentAction.prompt!, this.currentAction.playAudioOnly);
 
@@ -418,24 +278,15 @@ export class MainProcessor {
           this.cancelHandler();
         } else if (this.currentAction.actionType === "AtmInteraction") {
           if (!chatStoreService.playing) {
-            playAudio(
-              this.currentAction!.prompt!,
-              this.currentAction.playAudioOnly
-            );
+            playAudio(this.currentAction!.prompt!, this.currentAction.playAudioOnly);
           }
 
           myATMServiceAgent.send(this.currentAction.interactionMessage);
         } else if (this.currentAction.actionType === "ContinueTransaction") {
-          playAudio(
-            this.currentAction!.prompt!,
-            this.currentAction.playAudioOnly
-          );
+          playAudio(this.currentAction!.prompt!, this.currentAction.playAudioOnly);
         } else if (this.currentAction.actionType === "EndTransaction") {
           if (this.currentAction!.prompt) {
-            playAudio(
-              this.currentAction!.prompt!,
-              this.currentAction.playAudioOnly
-            );
+            playAudio(this.currentAction!.prompt!, this.currentAction.playAudioOnly);
           } else {
             this.startSession();
           }
@@ -443,10 +294,7 @@ export class MainProcessor {
         break;
       case "EndTransaction":
         if (this.currentAction!.prompt) {
-          playAudio(
-            this.currentAction!.prompt!,
-            this.currentAction.playAudioOnly
-          );
+          playAudio(this.currentAction!.prompt!, this.currentAction.playAudioOnly);
         } else {
           this.startSession();
         }

@@ -1,4 +1,12 @@
-function injectAudio(stream, options) {
+function createAudioRecorder(silenceTimeout = 2000, onStopRecording) {
+  let mediaRecorder;
+  let audioChunks = [];
+  let silenceTimer;
+  let audioContext;
+  let analyser;
+  let stopped_speaking_timer;
+  let recorder = null;
+  function inject(stream, options) {
     var audioContextType = window.webkitAudioContext || window.AudioContext;
 
     var harker = this;
@@ -88,11 +96,7 @@ function injectAudio(stream, options) {
         var history = 0;
         if (currentVolume > threshold && !harker.speaking) {
           // trigger quickly, short history
-          for (
-            var i = harker.speakingHistory.length - 3;
-            i < harker.speakingHistory.length;
-            i++
-          ) {
+          for (var i = harker.speakingHistory.length - 3; i < harker.speakingHistory.length; i++) {
             history += harker.speakingHistory[i];
           }
           if (history >= 2) {
@@ -131,3 +135,46 @@ function injectAudio(stream, options) {
 
     return harker;
   }
+  function captureMicrophone(callback) {
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(callback)
+      .catch(function (error) {
+        console.error(error);
+      });
+  }
+  function stopRecordingCallback() {
+    var blob = recorder.getBlob();
+    recorder.microphone.stop();
+    onStopRecording?.(blob);
+  }
+
+  function startRecord() {
+    captureMicrophone(function (microphone) {
+      recorder = RecordRTC(microphone, {
+        type: "audio",
+        recorderType: StereoAudioRecorder,
+        desiredSampRate: 16000,
+        numberOfAudioChannels: 1,
+      });
+      recorder.startRecording();
+      var speechEvents = inject(microphone, {});
+      speechEvents.on("speaking", function () {
+        if (recorder.getBlob()) return;
+        clearTimeout(stopped_speaking_timer);
+      });
+      speechEvents.on("stopped_speaking", function () {
+        if (recorder.getBlob()) return;
+        stopped_speaking_timer = setTimeout(function () {
+          recorder.stopRecording(stopRecordingCallback);
+        }, silenceTimeout);
+      });
+      // release microphone on stopRecording
+      recorder.microphone = microphone;
+    });
+  }
+  startRecord();
+  return () => {
+    recorder?.microphone.stop();
+  };
+}
