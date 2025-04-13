@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-  createTransactionProcessor,
-  playAudio,
-  repeat,
-  setLanguage,
-} from "../util/util";
+import { createTransactionProcessor, playAudio, repeat } from "../util/util";
 import { myATMServiceAgent } from "./atm-service-agent";
 import { TranscribeResponse, UpdateFileResponse } from "./bus-op.interface";
 import { chatStoreService } from "./chat-store.service";
@@ -22,19 +17,11 @@ import { ConnectionOptions } from "./websocket";
 import RecordRTC from "recordrtc";
 window.RecordRTC = RecordRTC;
 export class MainProcessor {
-  private mediaStream?: MediaStream;
   private audioChunks: Blob[] = [];
   private debugMode = true;
   private atmConnectionOption?: ConnectionOptions;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
-  private audioContext?: AudioContext;
-  private analyser?: AnalyserNode;
-  private bufferLength: number = 0;
-  private dataArray?: Float32Array;
-  private silenceTimer: number = 0;
-  private silenceStart?: number = undefined;
-  private silenceThreshold = -35;
   private silenceTimeout = 2000;
   private lastAudioPath = "";
   private maxListenTime = 20000;
@@ -108,8 +95,6 @@ export class MainProcessor {
     chatStoreService.setMic(false);
 
     this.recognize(blob);
-    const audioUrl = URL.createObjectURL(blob);
-    chatStoreService.setUserAudioUrl(audioUrl);
   };
 
   private async recognize(audioBlob: Blob) {

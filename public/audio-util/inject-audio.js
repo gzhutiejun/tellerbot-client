@@ -1,9 +1,4 @@
 function createAudioRecorder(silenceTimeout = 2000, onStopRecording) {
-  let mediaRecorder;
-  let audioChunks = [];
-  let silenceTimer;
-  let audioContext;
-  let analyser;
   let stopped_speaking_timer;
   let recorder = null;
   function inject(stream, options) {
