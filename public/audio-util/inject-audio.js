@@ -153,7 +153,6 @@ function createAudioRecorder(silenceTimeout = 2000, onStopRecording) {
     captureMicrophone(function (microphone) {
       recorder = RecordRTC(microphone, {
         type: "audio",
-        recorderType: StereoAudioRecorder,
         desiredSampRate: 16000,
         numberOfAudioChannels: 1,
       });
