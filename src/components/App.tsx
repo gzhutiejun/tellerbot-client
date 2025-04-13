@@ -36,14 +36,6 @@ function App() {
 
                 <AudioPlayer></AudioPlayer>
               </div>
-              <audio
-            id="userAudio"
-  
-            src={chatStoreService.userAudioUrl}
-            controls
-            autoPlay = {true}
-            style={{ display: "none" }}
-          ></audio>
             </div>
           </div>
         </div>

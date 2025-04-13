@@ -149,6 +149,7 @@ function createAudioRecorder(silenceTimeout = 2000, onStopRecording) {
       recorder = RecordRTC(microphone, {
         type: "audio",
         desiredSampRate: 16000,
+        recorderType: window.RecordRTC.StereoAudioRecorder,
         numberOfAudioChannels: 1,
       });
       recorder.startRecording();
