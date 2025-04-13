@@ -4,7 +4,7 @@ function createAudioRecorder(silenceTimeout = 2000, onStopRecording) {
   function inject(stream, options) {
     var audioContextType = window.webkitAudioContext || window.AudioContext;
 
-    var harker = this;
+    var harker = {};
     harker.events = {};
     harker.on = function (event, callback) {
       harker.events[event] = callback;
