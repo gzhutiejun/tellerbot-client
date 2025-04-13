@@ -6,7 +6,6 @@ import AudioPlayer from "./AudioPlayer";
 import StartChatButton from "./StartChatButton";
 import AgentChatPanel from "./AgentChatPanel";
 import CancelButton from "./CancelButton";
-import { chatStoreService } from "../services/chat-store.service";
 
 function App() {
   return (
