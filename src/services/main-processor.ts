@@ -18,7 +18,7 @@ import RecordRTC from "recordrtc";
 window.RecordRTC = RecordRTC;
 export class MainProcessor {
   private audioChunks: Blob[] = [];
-  private debugMode = true;
+  private debugMode = false;
   private atmConnectionOption?: ConnectionOptions;
   private chatbotServerConnected = false;
   private chatbotConnectionOption?: ConnectionOptions;
