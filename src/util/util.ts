@@ -77,7 +77,7 @@ export function repeat() {
   playAudio([prompt]);
 }
 export async function playAudio(prompts: string[], playMode: boolean = false) {
-  myLoggerService.log("playAudio");
+  myLoggerService.log("playAudio:" + prompts[0]);
   chatStoreService.clearAgentMessages();
   chatStoreService.setPlayAudioOnly(playMode);
   const questionText = prompts[0];

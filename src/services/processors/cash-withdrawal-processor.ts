@@ -54,7 +54,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
         break;
       case "notification":
         nextAction = {
-          actionType: "ContinueSession",
+          actionType: "Notification",
           prompt: [message.parameters.vg[chatStoreService.language]],
           playAudioOnly: true,
         };
@@ -66,6 +66,7 @@ export class CashWithdrawalTxProcessor implements IProcessor {
         nextAction = {
           actionType: "EndTransaction",
           prompt: [message.parameters.vg[chatStoreService.language]],
+          playAudioOnly: true,
         };
         break;
     }

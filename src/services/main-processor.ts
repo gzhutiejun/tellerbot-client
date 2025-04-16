@@ -17,7 +17,6 @@ import { ConnectionOptions } from "./websocket";
 import RecordRTC from "recordrtc";
 window.RecordRTC = RecordRTC;
 export class MainProcessor {
-  private audioChunks: Blob[] = [];
   private debugMode = false;
   private atmConnectionOption?: ConnectionOptions;
   private chatbotServerConnected = false;
@@ -85,20 +84,20 @@ export class MainProcessor {
   }
 
   stopRecordingCallback = (blob: Blob) => {
+    myLoggerService.log("stopRecordingCallback");
     if (this.canceled) return;
     if (this.listenTimer > 0) {
       clearTimeout(this.listenTimer);
       this.listenTimer = 0;
     }
 
-    chatStoreService.setStatus("");
     chatStoreService.setMic(false);
 
     this.recognize(blob);
   };
 
   private async recognize(audioBlob: Blob) {
-    myLoggerService.log("audioChunk size:" + this.audioChunks.length);
+    myLoggerService.log("audioChunk size:" + audioBlob.size);
 
     if (!chatStoreService.sessionContext!.sessionId) return;
 
@@ -110,7 +109,6 @@ export class MainProcessor {
 
       const formData = new FormData();
       formData.append("file", audioBlob);
-      chatStoreService.setStatus("Thinking...");
       myLoggerService.log("upload audio file");
       const uploadResult: UpdateFileResponse =
         await myChatbotServiceAgent?.upload(formData);
@@ -128,7 +126,6 @@ export class MainProcessor {
         const transcribeResult: TranscribeResponse =
           await myChatbotServiceAgent?.transcribe(JSON.stringify(data));
 
-        chatStoreService.setStatus("");
         myLoggerService.log("transcribe complete");
         if (transcribeResult && transcribeResult.transcript) {
           this.process(transcribeResult.transcript);
@@ -152,13 +149,11 @@ export class MainProcessor {
   startRecording = async () => {
     myLoggerService.log("startRecording");
 
-    chatStoreService.setStatus("Listening...");
-    chatStoreService.setMic(true);
     this.stopMicrophone = window.createAudioRecorder(
       this.silenceTimeout,
       this.stopRecordingCallback
     );
-
+    chatStoreService.setMic(true);
     this.listenTimer = window.setTimeout(() => {
       if (this.stopMicrophone) {
         this.stopMicrophone();
@@ -253,16 +248,24 @@ export class MainProcessor {
 
   private async processATMMessage(atmMessage: any) {
     myLoggerService.log("processATMMessage");
+    let nextAction: ChatbotAction
     if (this.transactionProcessor) {
-      this.currentAction = await this.transactionProcessor.processAtmMessage(
+      nextAction = await this.transactionProcessor.processAtmMessage(
         atmMessage
       );
     } else {
-      this.currentAction = await this.sessionProcessor!.processAtmMessage(
+      nextAction = await this.sessionProcessor!.processAtmMessage(
         atmMessage
       );
     }
 
+    if (nextAction.actionType === "Notification" || nextAction.actionType === "None")
+    {
+      if (nextAction.prompt && !chatStoreService.playing) playAudio(nextAction.prompt, nextAction.playAudioOnly);
+      return;
+    }
+
+    this.currentAction = nextAction;
     if (this.currentAction.actionType === "Cancel") {
       this.canceled = true;
       this.stopMicrophone?.();
@@ -290,7 +293,9 @@ export class MainProcessor {
     }
     return;
   }
+
   private async process(message: string | object) {
+    myLoggerService.log("process begin:" + this.currentAction.actionType);
     const user_text = typeof message === "string" ? message : undefined;
     const atmMessage = typeof message === "object" ? message : undefined;
 
@@ -394,6 +399,8 @@ export class MainProcessor {
         myLoggerService.log("Invalid Action");
         break;
     }
+
+    myLoggerService.log("process end");
   }
 }
 

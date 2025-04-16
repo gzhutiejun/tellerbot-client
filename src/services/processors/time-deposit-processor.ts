@@ -86,6 +86,7 @@ export class TimeDepositTxProcessor implements IProcessor {
         nextAction = {
           actionType: "EndTransaction",
           prompt: [message.parameters.vg[chatStoreService.language]],
+          playAudioOnly: true,
         };
         break;
     }

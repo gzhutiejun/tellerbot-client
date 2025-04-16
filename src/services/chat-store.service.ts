@@ -16,12 +16,11 @@ export type ChatbotActionType =
   | "AtmInteraction";
 
 export class ChatStoreService {
-  listenEarly = false;
   playing: boolean = false;
   customerMessage: string = "";
   agentMessages: string[] = [];
   mic: boolean = false;
-  status: string = "";
+
   debugMode: boolean = false;
   audioUrl: string = "";
   conversationStarted: boolean = false;
@@ -40,13 +39,11 @@ export class ChatStoreService {
   };
   customerAudioUrl ="";
   repeatCount = 0;
-  userAudioUrl = "";
+
   constructor() {
     makeAutoObservable(this);
   }
-  setUserAudioUrl(url: string) {
-    this.userAudioUrl = url;
-  }
+
   setPlayAudioOnly(playModeOnly: boolean) {
     this.playAudioOnly = playModeOnly;
   }
@@ -66,13 +63,6 @@ export class ChatStoreService {
     myLoggerService.log("setAudioUrl: " + url);
     this.audioUrl = url;
 
-    if (this.audioUrl && !this.playAudioOnly) {
-      setTimeout(() => {
-        myLoggerService.log("setAudioUrl: ready to record media");
-        if (this.listenEarly && this.startListeningHandler)
-          this.startListeningHandler();
-      });
-    }
   }
   setMic(mic: boolean) {
     this.mic = mic;
@@ -94,9 +84,7 @@ export class ChatStoreService {
   setPlaying() {
     this.playing = true;
   }
-  setStatus(status: string) {
-    this.status = status;
-  }
+
   setSessionId(sessionId: string) {
     this.sessionContext.sessionId = sessionId;
   }
@@ -116,8 +104,8 @@ export class ChatStoreService {
   }
   setAudioPlayComplete() {
     this.playing = false;
-    console.log("setAudioPlayComplete: playAudioOnly:", this.playAudioOnly);
-    if (!this.listenEarly && !this.playAudioOnly) {
+    myLoggerService.log("setAudioPlayComplete: playAudioOnly:" +this.playAudioOnly);
+    if (!this.playAudioOnly) {
       this.startListeningHandler();
     }
   }
@@ -136,7 +124,6 @@ export class ChatStoreService {
   resetSessionContext() {
     this.customerMessage = "";
     this.agentMessages = [];
-    this.status = "";
     this.sessionContext = {
       sessionId: "",
       transactionContext: {},
@@ -145,7 +132,6 @@ export class ChatStoreService {
   resetTransactionContext() {
     this.customerMessage = "";
     this.agentMessages = [];
-    this.status = "";
     this.sessionContext.transactionContext = {};
   }
 }

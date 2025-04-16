@@ -10,7 +10,7 @@ export function getSessionPromptSchema(): IPromptSchema {
   chatStoreService.sessionContext!.supportedTransactons!.map((item) => {
     txNames += item + ",";
   });
-  const instruction = `extract transaction (e.g. ${txNames}), extract cancel (e.g. cancel, exit, no need)`;
+  const instruction = `extract transaction (e.g. ${txNames})`;
 
   return {
     instruction: instruction,
@@ -29,7 +29,7 @@ export function getCashWithdrawalPromptSchema(): IPromptSchema {
     currencies += item + ",";
   });
 
-  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}, check, checking), extract cancel (e.g. cancel, exit, no need)`;
+  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}, check, checking)`;
 
   return {
     instruction: instruction,
@@ -58,7 +58,7 @@ export function getTimeDepositPromptSchema(): IPromptSchema {
     currencies += item + ",";
   });
 
-  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}, check, checking), extract term (e.g. ${terms}), extract cancel (e.g. cancel, exit, no need)`;
+  const instruction = `extract currency (e.g. ${currencies}), extract amount or number as amount, extract account (e.g. ${accounts}, check, checking), extract term (e.g. ${terms})`;
 
   return {
     instruction: instruction,
