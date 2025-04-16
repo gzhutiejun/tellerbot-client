@@ -301,8 +301,6 @@ export class MainProcessor {
 
     if (!chatStoreService.sessionContext.sessionId) return;
 
-    chatStoreService.setCustomerMessage(user_text || "");
-
     if (atmMessage) {
       this.processATMMessage(atmMessage);
       return;

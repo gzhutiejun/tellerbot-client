@@ -125,6 +125,7 @@ export class TimeDepositTxProcessor implements IProcessor {
 
     try {
       if (res && res.data && res.data.data) {
+        chatStoreService.setCustomerMessage(text);
         const txData = JSON.parse(res.data.data);
         console.log("txData", txData);
         if (extractCancel(txData.cancel)) {

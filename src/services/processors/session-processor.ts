@@ -84,6 +84,7 @@ export class SessionProcessor implements IProcessor {
 
     try {
       if (res && res.data && res.data.data) {
+        chatStoreService.setCustomerMessage(text);
         const txData = JSON.parse(res.data.data);
         if (extractCancel(txData.cancel)) {
           return {
